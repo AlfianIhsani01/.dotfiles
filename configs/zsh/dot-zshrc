@@ -1,0 +1,47 @@
+#!/data/data/com.termux/files/usr/bin/env  zsh
+
+### Added by Zinit's installer
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+[ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
+[ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+source "${ZINIT_HOME}/zinit.zsh"
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
+
+# Load a few important annexes, without Turbo
+# (this is currently required for annexes)
+zinit for \
+    light-mode \
+        zdharma-continuum/zinit-annex-as-monitor \
+        zdharma-continuum/zinit-annex-bin-gem-node \
+        zdharma-continuum/zinit-annex-patch-dl \
+        zdharma-continuum/zinit-annex-rust
+
+### End of Zinit's installer chunnk
+### ZINIT CONFIG:
+zinit for \
+    light-mode \
+        zsh-users/zsh-autosuggestions \
+        zsh-users/zsh-syntax-highlighting \
+        zdharma-continuum/fast-syntax-highlighting \
+        zdharma-continuum/history-search-multi-word \
+
+zi ice has"starship" as"command" \
+        atinit"starship init zsh > init.zsh; starship completions zsh > _starship" \
+        atpull"%atinit" src"init.zsh"
+zi light _local/starship
+
+zi ice wait'1' has'atuin'
+zi light atuinsh/atuin
+
+zi ice wait'1' has'zoxide'
+zi light z-shell/zsh-zoxide
+
+zi ice wait lucid has'eza' atinit'AUTOCD=1'
+zi light z-shell/zsh-eza
+
+### Source zsh config
+for file in $XDG_CONFIG_HOME/globrc/*; do
+    source "$file"
+done
+

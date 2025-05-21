@@ -1,0 +1,5 @@
+#!/data/data/com.termux/files/usr/bin/env zsh
+
+zi ice has'fastfetch' as"command" \
+  src"$XDG_CONFIG_HOME/fastfetch/startup.sh"
+zi light $XDG_CONFIG_HOME/fastfetch
