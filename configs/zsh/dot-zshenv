@@ -10,7 +10,7 @@ export XDG_RUNTIME_DIR="$ROOT/usr/tmp/runtime-$USER"
 # General
 export LC_ALL="${LC_ALL:-C.UTF-8}"
 export LANG="${LANG:-C.UTF-8}"
-export CARGO_HOME="${XDG_CONFIG_HOME:-$HOME/.config}/cargo"
+export CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
 export GIT_CONFIG_GLOBAL="${XDG_CONFIG_HOME:-$HOME/.config}/git/config"
 export EDITOR="nvim"
 export SSH_CONFIG_DIR="${XDG_CONFIG_HOME}/ssh"
