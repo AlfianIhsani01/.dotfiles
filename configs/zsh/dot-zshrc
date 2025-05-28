@@ -26,22 +26,33 @@ zinit for \
         zdharma-continuum/fast-syntax-highlighting \
         zdharma-continuum/history-search-multi-word \
 
-zi ice has"starship" as"command" \
-        atinit"starship init zsh > init.zsh; starship completions zsh > _starship" \
-        atpull"%atinit" src"init.zsh"
-zi light _local/starship
+zinit ice as"command" from"gh-r" bpick"*musl*" \
+      atclone"./starship init zsh > init.zsh; ./starship completions zsh > _starship" \
+      atpull"%atclone" src"init.zsh"
+zinit light starship/starship
 
-zi ice wait'1' has'atuin'
+zi ice as"command" from"gh-r" \
+      atclone"./zoxide init zsh > init.zsh" \
+      atpull"%atclone" src"init.zsh"
+zi light ajeetdsouza/zoxide
+
+zi ice as"command" from"gh-r" bpick"*musl.tar*" \
+      atclone"mv ./atuin*/* ./;rmdir atuin-*;./atuin init zsh > init.zsh" \
+      atpull"%atclone" src"init.zsh"
 zi light atuinsh/atuin
 
-zi ice wait'1' has'zoxide'
+
+zi ice has'zoxide'
 zi light z-shell/zsh-zoxide
 
 zi ice wait lucid has'eza' atinit'AUTOCD=1'
 zi light z-shell/zsh-eza
 
+
+
 ### Source zsh config
-for file in $XDG_CONFIG_HOME/globrc/*; do
+for file in $XDG_CONFIG_HOME/src/*; do
     source "$file"
 done
+
 

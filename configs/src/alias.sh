@@ -13,6 +13,9 @@ alias cfg='config_shortcut'
 alias cstp='starship config'
 alias czrc='vi $ZDOTDIR/.zshrc'
 
+alias v='$EDITOR'
+alias vi='$EDITOR'
+
 #lsd
 # alias ls='eza --icons=always'
 # alias l='ls -l'
