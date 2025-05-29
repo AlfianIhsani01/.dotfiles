@@ -1,9 +1,9 @@
 # Starship Configuration
 
 format = """
-[○$jobs$username$fill⊳](color8)$cmd_duration\
+[○$jobs$fill⊳](color8)$cmd_duration\
 $line_break\
-[╭](color4)[𓊈$directory𓊉](color2)\
+[╭](color4)[𓊈$username$directory𓊉](color2)\
 $package\
 $c\
 $cmake\
@@ -56,7 +56,7 @@ format = '[$number$symbol]($style)'
 [directory]
 style = 'color4'
 fish_style_pwd_dir_length = 2
-home_symbol = '󱂶 Home'
+home_symbol = '⌂ Home'
 format = '[$path]($style)[$read_only]($read_only_style)'
 truncation_length = 1
 truncation_symbol = "—"
@@ -67,7 +67,7 @@ disabled = false
 # Git Branch Configuration
 [git_branch]
 format = '[$symbol](color2)[$branch(:$remote_branch)[·](bold color10)]($style)'
-symbol = '[·](bold color13) '
+symbol = '[·](bold color13)⎇ '
 style = 'color5'
 truncation_length = 4
 truncation_symbol = ''
