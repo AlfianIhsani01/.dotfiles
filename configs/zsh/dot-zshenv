@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env zsh
+#!/usr/bin/env zsh
 
 #XDG directory
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"

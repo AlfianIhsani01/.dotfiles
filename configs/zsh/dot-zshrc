@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env  zsh
+#!/usr/bin/env  zsh
 
 ### Added by Zinit's installer
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
@@ -26,21 +26,27 @@ zinit for \
         zdharma-continuum/fast-syntax-highlighting \
         zdharma-continuum/history-search-multi-word \
 
-zinit ice as"command" from"gh-r" bpick"*musl*" \
-      atclone"./starship init zsh > init.zsh; ./starship completions zsh > _starship" \
+zinit ice as"null" from"gh-r" mv"starship -> $ZPFX/bin" bpick"*musl*" \
+      atclone"starship init zsh > init.zsh; ./starship completions zsh > _starship" \
       atpull"%atclone" src"init.zsh"
 zinit light starship/starship
 
-zi ice as"command" from"gh-r" \
-      atclone"./zoxide init zsh > init.zsh" \
+zi ice as"null" from"gh-r" mv"zoxide -> $ZPFX/bin" \
+      atclone"zoxide init zsh > init.zsh" \
       atpull"%atclone" src"init.zsh"
 zi light ajeetdsouza/zoxide
 
-zi ice as"command" from"gh-r" bpick"*musl.tar*" \
-      atclone"mv ./atuin*/* ./;rmdir atuin-*;./atuin init zsh > init.zsh" \
+zi ice as"null" from"gh-r" mv"atuin-*/atuin -> $ZPFX/bin" bpick"*musl.tar*" \
+      atclone"atuin init zsh > init.zsh;rm -r atuin-" \
       atpull"%atclone" src"init.zsh"
-zi light atuinsh/atuin
+zi load atuinsh/atuin
 
+zi ice as"null" from"gh-r" \
+      atclone"cp -rn fastfetch-*/usr/* $ZPFX;rm -rf fastfetch-*"
+zi light fastfetch-cli/fastfetch
+
+zi ice as"null" from"gh-r" mv"eza ->$ZPFX/bin"
+zi light eza-community/eza
 
 zi ice has'zoxide'
 zi light z-shell/zsh-zoxide
