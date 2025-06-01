@@ -27,17 +27,18 @@ zinit for \
         zdharma-continuum/history-search-multi-word \
 
 zinit ice as"null" from"gh-r" mv"starship -> $ZPFX/bin" bpick"*musl*" \
-      atclone"starship init zsh > init.zsh; ./starship completions zsh > _starship" \
+      atclone"starship init zsh > init.zsh; starship completions zsh > _starship" \
       atpull"%atclone" src"init.zsh"
 zinit light starship/starship
 
 zi ice as"null" from"gh-r" mv"zoxide -> $ZPFX/bin" \
       atclone"zoxide init zsh > init.zsh" \
+      mv"-rn man -> $ZPFX" \
       atpull"%atclone" src"init.zsh"
-zi light ajeetdsouza/zoxide
+zi load ajeetdsouza/zoxide
 
 zi ice as"null" from"gh-r" mv"atuin-*/atuin -> $ZPFX/bin" bpick"*musl.tar*" \
-      atclone"atuin init zsh > init.zsh;rm -r atuin-" \
+      atclone"rm -r atuin-*; atuin init zsh > init.zsh; atuin gen-completions --shell zsh > _atuin" \
       atpull"%atclone" src"init.zsh"
 zi load atuinsh/atuin
 
