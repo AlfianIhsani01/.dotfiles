@@ -67,7 +67,7 @@ disabled = false
 # Git Branch Configuration
 [git_branch]
 format = '[$symbol](color2)[$branch(:$remote_branch)[·](bold color10)]($style)'
-symbol = '[·](bold color13)⎇ '
+symbol = '[·](bold color13)𖤝 '
 style = 'color5'
 truncation_length = 4
 truncation_symbol = ''
@@ -142,9 +142,9 @@ symbol = ' '
 
 # Character Symbols
 [character]
-success_symbol = '[](color14)'
-error_symbol = '[](color9)'
-vimcmd_symbol = '[](color2)'
+success_symbol = '[▶](color14)'
+error_symbol = '[ᛝ](color9)'
+vimcmd_symbol = '[◆](color2)'
 
 # Package Configuration
 [package]

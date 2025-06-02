@@ -2,3 +2,4 @@ configs/zsh/dot-zcompdump
 configs/zsh/dot-zsh_history
 termux/font.ttf
 termux/shell
+configs/nvim/lazy-lock.json

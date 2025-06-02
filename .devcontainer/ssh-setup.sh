@@ -1,7 +1,5 @@
 #!/bin/env bash
 
-### SSHD
-
 SSHD_PORT="${SSHD_PORT:-"2222"}"
 USERNAME="${USERNAME:-"automatic"}"
 USER_UID="${USERUID:-"automatic"}"
@@ -70,9 +68,7 @@ if [ "${USERNAME}" != "root" ] && [ "${EXISTING_NON_ROOT_USER}" != "${USERNAME}"
     EXISTING_NON_ROOT_USER="${USERNAME}"
 fi
 
-# *********************************
-# ** Shell customization section **
-# *********************************
+# Shell customization section
 
 if [ "${USERNAME}" = "root" ]; then
     user_home="/root"
@@ -87,6 +83,7 @@ else
     fi
 fi
 
+# SSH server setup
 USERNAME="${USERNAME:-"${_REMOTE_USER:-"automatic"}"}"
 
 # Determine the appropriate non-root user
