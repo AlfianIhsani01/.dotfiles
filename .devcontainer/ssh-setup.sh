@@ -152,8 +152,24 @@ sudoIf() {
     fi
 }
 
-# Start SSH server
-sudoIf /etc/init.d/ssh start 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+# Start SSH server - Void Linux uses runit/sv
+if command -v sv >/dev/null 2>&1; then
+    # Void Linux with runit
+    sudoIf sv up sshd 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+elif [ -f /etc/init.d/ssh ]; then
+    # Traditional SysV init (Debian/Ubuntu)
+    sudoIf /etc/init.d/ssh start 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+elif [ -f /etc/init.d/sshd ]; then
+    # Traditional SysV init (CentOS/RHEL)
+    sudoIf /etc/init.d/sshd start 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+elif command -v systemctl >/dev/null 2>&1; then
+    # systemd
+    sudoIf systemctl start sshd 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+else
+    # Fallback: start sshd directly
+    sudoIf /usr/sbin/sshd -D &
+    echo "Started sshd directly (PID: $!)" | sudoIf tee /tmp/sshd.log > /dev/null
+fi
 
 set +e
 exec "$@"
