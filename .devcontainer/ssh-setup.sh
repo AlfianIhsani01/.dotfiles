@@ -5,7 +5,7 @@ SSHD_PORT="${SSHD_PORT:-2222}"
 USERNAME="${USERNAME:-automatic}"
 USER_UID="${USER_UID:-automatic}"
 USER_GID="${USER_GID:-automatic}"
-START_SSHD="${START_SSHD:-false}"
+START_SSHD="${START_SSHD:-true}"
 NEW_PASSWORD="${NEW_PASSWORD:-skip}"
 
 set -e
