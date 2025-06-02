@@ -1,189 +1,204 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-SSHD_PORT="${SSHD_PORT:-"2222"}"
-USERNAME="${USERNAME:-"automatic"}"
-USER_UID="${USERUID:-"automatic"}"
-USER_GID="${USERGID:-"automatic"}"
-START_SSHD="${START_SSHD:-"true"}"
-NEW_PASSWORD="${NEW_PASSWORD:-"skip"}"
+# Configuration with defaults
+SSHD_PORT="${SSHD_PORT:-2222}"
+USERNAME="${USERNAME:-automatic}"
+USER_UID="${USER_UID:-automatic}"
+USER_GID="${USER_GID:-automatic}"
+START_SSHD="${START_SSHD:-false}"
+NEW_PASSWORD="${NEW_PASSWORD:-skip}"
 
 set -e
+
+# Utility functions
+log() { echo -e "$@"; }
+user_exists() { id -u "$1" >/dev/null 2>&1; }
+group_exists() { getent group "$1" >/dev/null 2>&1; }
+
+# Root check
 if [ "$(id -u)" -ne 0 ]; then
-    echo -e 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile before running this script.'
+    log 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile.'
     exit 1
 fi
 
-# If in automatic mode, determine if a user already exists, if not use vscode
-if [ "${USERNAME}" = "auto" ] || [ "${USERNAME}" = "automatic" ]; then
-    if [ "${_REMOTE_USER}" != "root" ]; then
-        USERNAME="${_REMOTE_USER}"
-    else
-        USERNAME=""
-        POSSIBLE_USERS=("devcontainer" "vscode" "node" "codespace" "$(awk -v val=1000 -F ":" '$3==val{print $1}' /etc/passwd)")
-        for CURRENT_USER in "${POSSIBLE_USERS[@]}"; do
-            if id -u ${CURRENT_USER} > /dev/null 2>&1; then
-                USERNAME=${CURRENT_USER}
-                break
+# Determine username
+determine_username() {
+    case "$USERNAME" in
+        "auto"|"automatic")
+            if [ "${_REMOTE_USER:-root}" != "root" ]; then
+                USERNAME="$_REMOTE_USER"
+                return
             fi
-        done
-        if [ "${USERNAME}" = "" ]; then
-            USERNAME=vscode
+            
+            # Try common usernames
+            for user in "devcontainer" "vscode" "node" "codespace" $(awk -F: '$3==1000{print $1}' /etc/passwd); do
+                if user_exists "$user"; then
+                    USERNAME="$user"
+                    return
+                fi
+            done
+            USERNAME="vscode"  # Default fallback
+            ;;
+        "none")
+            USERNAME="root"
+            USER_UID=0
+            USER_GID=0
+            ;;
+    esac
+}
+
+# Create or update user
+setup_user() {
+    local group_name="$USERNAME"
+    
+    if user_exists "$USERNAME"; then
+        # Update existing user
+        if [ "$USER_GID" != "automatic" ] && [ "$USER_GID" != "$(id -g "$USERNAME")" ]; then
+            group_name="$(id -gn "$USERNAME")"
+            groupmod --gid "$USER_GID" "$group_name"
+            usermod --gid "$USER_GID" "$USERNAME"
+        fi
+        
+        if [ "$USER_UID" != "automatic" ] && [ "$USER_UID" != "$(id -u "$USERNAME")" ]; then
+            usermod --uid "$USER_UID" "$USERNAME"
+        fi
+    else
+        # Create new user
+        local gid_arg=""
+        local uid_arg=""
+        
+        [ "$USER_GID" != "automatic" ] && gid_arg="--gid $USER_GID"
+        [ "$USER_UID" != "automatic" ] && uid_arg="--uid $USER_UID"
+        
+        groupadd $gid_arg "$USERNAME"
+        useradd -s /bin/bash $uid_arg --gid "$USERNAME" -m "$USERNAME"
+    fi
+    
+    # Setup sudo for non-root users
+    if [ "$USERNAME" != "root" ]; then
+        echo "$USERNAME ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/$USERNAME"
+        chmod 0440 "/etc/sudoers.d/$USERNAME"
+    fi
+}
+
+# Setup user home directory
+setup_home_directory() {
+    if [ "$USERNAME" = "root" ]; then
+        user_home="/root"
+    else
+        user_home="$(getent passwd "$USERNAME" | cut -d: -f6)"
+        [ "$user_home" = "/home/$USERNAME" ] && user_home="/home/$USERNAME"
+        
+        if [ ! -d "$user_home" ]; then
+            mkdir -p "$user_home"
+            chown "$USERNAME:$(id -gn "$USERNAME")" "$user_home"
         fi
     fi
-elif [ "${USERNAME}" = "none" ]; then
-    USERNAME=root
-    USER_UID=0
-    USER_GID=0
-fi
-# Create or update a non-root user to match UID/GID.
-group_name="${USERNAME}"
-if id -u ${USERNAME} > /dev/null 2>&1; then
-    # User exists, update if needed
-    if [ "${USER_GID}" != "automatic" ] && [ "$USER_GID" != "$(id -g $USERNAME)" ]; then
-        group_name="$(id -gn $USERNAME)"
-        groupmod --gid $USER_GID ${group_name}
-        usermod --gid $USER_GID $USERNAME
+}
+
+# Handle password setup
+setup_password() {
+    case "$NEW_PASSWORD" in
+        "random")
+            NEW_PASSWORD="$(openssl rand -hex 16)"
+            EMIT_PASSWORD="true"
+            echo "$USERNAME:$NEW_PASSWORD" | chpasswd
+            ;;
+        "skip")
+            ;;
+        *)
+            echo "$USERNAME:$NEW_PASSWORD" | chpasswd
+            ;;
+    esac
+}
+
+# Setup SSH group and user membership
+setup_ssh_group() {
+    if ! group_exists ssh; then
+        log "Adding 'ssh' group..."
+        groupadd ssh
     fi
-    if [ "${USER_UID}" != "automatic" ] && [ "$USER_UID" != "$(id -u $USERNAME)" ]; then
-        usermod --uid $USER_UID $USERNAME
-    fi
-else
-    # Create user
-    if [ "${USER_GID}" = "automatic" ]; then
-        groupadd $USERNAME
-    else
-        groupadd --gid $USER_GID $USERNAME
-    fi
-    if [ "${USER_UID}" = "automatic" ]; then
-        useradd -s /bin/bash --gid $USERNAME -m $USERNAME
-    else
-        useradd -s /bin/bash --uid $USER_UID --gid $USERNAME -m $USERNAME
-    fi
-fi
+    
+    [ "$USERNAME" != "root" ] && usermod -aG ssh "$USERNAME"
+}
 
-# Add add sudo support for non-root user
-if [ "${USERNAME}" != "root" ] && [ "${EXISTING_NON_ROOT_USER}" != "${USERNAME}" ]; then
-    echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"${USERNAME}"
-    chmod 0440 /etc/sudoers.d/"${USERNAME}"
-    EXISTING_NON_ROOT_USER="${USERNAME}"
-fi
+# Configure SSH daemon
+configure_sshd() {
+    mkdir -p /var/run/sshd
+    
+    # Apply SSH configuration changes
+    sed -i \
+        -e 's/session\s*required\s*pam_loginuid\.so/session optional pam_loginuid.so/g' \
+        /etc/pam.d/sshd
+    
+    sed -i \
+        -e 's/#*PermitRootLogin prohibit-password/PermitRootLogin yes/g' \
+        -e "s/#*\s*Port\s\+.*/Port $SSHD_PORT/g" \
+        -e 's/#\?\s*UsePAM\s\+.*/UsePAM yes/g' \
+        /etc/ssh/sshd_config
+}
 
-# *********************************
-# ** Shell customization section **
-# *********************************
-
-if [ "${USERNAME}" = "root" ]; then
-    user_home="/root"
-# Check if user already has a home directory other than /home/${USERNAME}
-elif [ "/home/${USERNAME}" != "$( getent passwd "${USERNAME}" | cut -d: -f6 )" ]; then
-    user_home="$( getent passwd "${USERNAME}" | cut -d: -f6 )"
-else
-    user_home="/home/${USERNAME}"
-    if [ ! -d "${user_home}" ]; then
-        mkdir -p "${user_home}"
-        chown "${USERNAME}":"${group_name}" "${user_home}"
-    fi
-fi
-
-USERNAME="${USERNAME:-"${_REMOTE_USER:-"automatic"}"}"
-
-# Determine the appropriate non-root user
-if [ "${USERNAME}" = "auto" ] || [ "${USERNAME}" = "automatic" ]; then
-    USERNAME=""
-    POSSIBLE_USERS=("vscode" "node" "codespace" "$(awk -v val=1000 -F ":" '$3==val{print $1}' /etc/passwd)")
-    for CURRENT_USER in "${POSSIBLE_USERS[@]}"; do
-        if id -u "${CURRENT_USER}" > /dev/null 2>&1; then
-            USERNAME="${CURRENT_USER}"
-            break
-        fi
-    done
-    if [ "${USERNAME}" = "" ]; then
-        USERNAME=root
-    fi
-elif [ "${USERNAME}" = "none" ] || ! id -u "${USERNAME}" > /dev/null 2>&1; then
-    USERNAME=root
-fi
-
-# Generate password if new password set to the word "random"
-if [ "${NEW_PASSWORD}" = "random" ]; then
-    NEW_PASSWORD="$(openssl rand -hex 16)"
-    EMIT_PASSWORD="true"
-elif [ "${NEW_PASSWORD}" != "skip" ]; then
-    # If new password not set to skip, set it for the specified user
-    echo "${USERNAME}:${NEW_PASSWORD}" | chpasswd
-fi
-
-if [ "$(getent group ssh)" ]; then
-  echo "'ssh' group already exists."
-else
-  echo "adding 'ssh' group, as it does not already exist."
-  groupadd ssh
-fi
-
-# Add user to ssh group
-if [ "${USERNAME}" != "root" ]; then
-    usermod -aG ssh "${USERNAME}"
-fi
-
-# Setup sshd
-# Install openssh if not already installed
-if ! command -v sshd &> /dev/null; then
-    echo "Installing openssh..."
-    xbps-install -y openssh
-fi
-
-mkdir -p /var/run/sshd
-sed -i 's/session\s*required\s*pam_loginuid\.so/session optional pam_loginuid.so/g' /etc/pam.d/sshd
-sed -i 's/#*PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
-sed -i -E "s/#*\s*Port\s+.+/Port ${SSHD_PORT}/g" /etc/ssh/sshd_config
-# Need to UsePAM so /etc/environment is processed
-sed -i -E "s/#?\s*UsePAM\s+.+/UsePAM yes/g" /etc/ssh/sshd_config
-
-# Write out a scripts that can be referenced as an ENTRYPOINT to auto-start sshd and fix login environments
-tee /usr/local/share/ssh-init.sh > /dev/null \
-<< 'EOF'
+# Create SSH initialization script
+create_ssh_init_script() {
+    cat > /usr/local/share/ssh-init.sh << 'EOF'
 #!/usr/bin/env bash
-# This script is intended to be run as root with a container that runs as root (even if you connect with a different user)
-# However, it supports running as a user other than root if passwordless sudo is configured for that same user.
-
 set -e
 
-sudoIf()
-{
+sudoIf() {
     if [ "$(id -u)" -ne 0 ]; then
         sudo "$@"
     else
         "$@"
     fi
 }
-EOF
-tee -a /usr/local/share/ssh-init.sh > /dev/null \
-<< 'EOF'
 
-# ** Start SSH server **
-# Using runit to start sshd on Void Linux
-sudoIf sv start sshd 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+# Start SSH server - detect init system
+start_ssh_service() {
+    if command -v sv >/dev/null 2>&1; then
+        # Void Linux / runit
+        sudoIf sv up sshd 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+    elif [ -f /etc/init.d/ssh ]; then 
+        # SysV init
+        sudoIf /etc/init.d/ssh start 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+    elif command -v systemctl >/dev/null 2>&1; then
+        # systemd
+        sudoIf systemctl start sshd 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+    else
+        echo "Could not detect init system to start SSH service" >&2
+        exit 1
+    fi
+}
+
+start_ssh_service
 
 set +e
 exec "$@"
 EOF
-chmod +x /usr/local/share/ssh-init.sh
+    chmod +x /usr/local/share/ssh-init.sh
+}
 
-# Enable sshd service with runit
-if [ ! -e /var/service/sshd ]; then
-    echo "Enabling sshd service with runit..."
-    ln -s /etc/sv/sshd /var/service/
-fi
+# Main execution
+main() {
+    determine_username
+    setup_user
+    setup_home_directory
+    setup_password
+    setup_ssh_group
+    configure_sshd
+    create_ssh_init_script
+    
+    # Start SSH daemon if requested
+    [ "$START_SSHD" = "true" ] && /usr/local/share/ssh-init.sh
+    
+    # Output results
+    log "Done!\n"
+    log "- Port: $SSHD_PORT"
+    log "- User: $USERNAME"
+    [ "$EMIT_PASSWORD" = "true" ] && log "- Password: $NEW_PASSWORD"
+    
+    log "\nForward port $SSHD_PORT to your local machine and run:\n"
+    log "  ssh -p $SSHD_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o GlobalKnownHostsFile=/dev/null $USERNAME@localhost\n"
+}
 
-# If we should start sshd now, do so
-if [ "${START_SSHD}" = "true" ]; then
-    /usr/local/share/ssh-init.sh
-fi
-
-# Output success details
-echo -e "Done!\n\n- Port: ${SSHD_PORT}\n- User: ${USERNAME}"
-if [ "${EMIT_PASSWORD}" = "true" ]; then
-    echo "- Password: ${NEW_PASSWORD}"
-fi
-
-echo -e "\nForward port ${SSHD_PORT} to your local machine and run:\n\n  ssh -p ${SSHD_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o GlobalKnownHostsFile=/dev/null ${USERNAME}@localhost\n"
+main "$@"
+ln -s /etc/sv/sshd /var/service/
