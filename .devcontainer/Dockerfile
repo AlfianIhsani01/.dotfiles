@@ -3,6 +3,7 @@ RUN xbps-install -Syu && xbps-install -y \
     base-devel \
     curl \
     wget \
+    iptables \
     tailscale \
     git \
     neovim \
@@ -21,6 +22,6 @@ RUN xbps-install -Syu && xbps-install -y \
     which \
     && xbps-remove -O
 
-RUN useradd -m -s /bin/zsh -G wheel akal && \
+RUN useradd -m -G wheel akal && \
     echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 USER akal
