@@ -1,4 +1,4 @@
-FROM ghcr.io/void-linux/void-glibc-full:20250601r1
+FROM ghcr.io/void-linux/void-musl-full:20250601r1
 RUN xbps-install -Syu && xbps-install -y \
     base-devel \
     curl \
