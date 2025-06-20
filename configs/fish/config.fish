@@ -1,21 +1,12 @@
-if status is-interactive
-    # Commands to run in interactive sessions can go here
-    starship init fish | source
-    zoxide init fish | source
-    atuin init fish | source
-    set -x AUTOCD 1
-    source ~/.config/fish/functions/fish-eza.fish
+#!/data/data/com.termux/files/usr/bin/env fish
+dirs_config       # Keep this function at top level
+function starship_transient_prompt_func
+  starship module line_break
+  starship module custom.dot
+  starship module git_branch
+  starship module character
 end
-
-if status --is-login
-    clear
-    source ~/.config/fastfetch/startup.sh
-end
-
-
-sed 's/$(ssh-agent -s)/(ssh-agent -c)/' ~/.config/globrc/alias.sh | source
-
+enable_transience
 set -gx EDITOR nvim
-
-xdg_dirs
+source $XDG_CONFIG_HOME/src/termux.sh
 

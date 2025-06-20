@@ -1,11 +1,10 @@
 #Alias
-alias wd='cd $WORK_DIR'
-alias pdg='pkg update && pkg upgrade -y'
 alias grep='rg'
-alias ssha='eval $(ssh-agent -s)'
-alias ssh+='ssh-add'
+alias ssha='eval $(ssh-agent -s) && ssh-add $1'
+# alias ssh+='ssh-add'
 alias find='fd'
 alias ..='cd ..'
+alias ...='cd ../..'
 alias c='clear'
 alias cat='bat'
 
@@ -26,6 +25,7 @@ alias vi='$EDITOR'
 # alias ltd='ls --tree -D'
 
 #git
+alias g='git'
 alias gcl='git clone --depth 1'
 alias gin='git init'
 alias ga='git add'
@@ -33,6 +33,3 @@ alias gc='git commit -m'
 alias gp='git push origin'
 alias gs='git status'
 
-# termux
-alias M='termux-media-player'
-alias R='termux-reload-settings'

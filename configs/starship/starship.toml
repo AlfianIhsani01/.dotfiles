@@ -1,9 +1,12 @@
 # Starship Configuration
 
 format = """
-[○$jobs$fill⊳](color8)$cmd_duration\
+$fill\
+$cmd_duration\
 $line_break\
-[╭](color4)[𓊈$username$directory𓊉](color2)\
+$jobs\
+$username\
+$directory\
 $package\
 $c\
 $cmake\
@@ -24,37 +27,133 @@ $meson\
 $nats\
 $direnv\
 $env_var\
-[[$fill](color12)⊳](bold color10)\
+$fill\
+$status\
 $line_break\
 $sudo\
-[╰](color4)$git_branch$character"""
+$git_branch\
+${custom.dot}\
+$character
+"""
 
 right_format = """
 $git_status\
-$line_break\
 """
 add_newline = false
-palette = 'bearded-bear'
+palette = 'blackdiamond'
 scan_timeout = 150
+
+# Palettes Configuration
+[palettes.ayudark]
+main-dark = '#000000'
+main-light = '#2E3338'
+text = '#dfdfdf'
+text-light = '#ffffff'
+text-dark = '#8f8f8f'
+text-disabled = '#7f7f7f'
+primary = '#0f8fcf'
+info = '#FFD166'
+success = '#06D6A0'
+error = '#EF476F'
+warn = '#E55934'
+main = '#0f1419'
+background = '#0f1419'
+foreground = '#e6e1cf'
+cursor = '#f29718'
+selection = '#253340'
+cursorAccent = '#0f1419'
+black = '#000000'
+red = '#ff3333'
+green = '#b8cc52'
+yellow = '#e7c547'
+blue = '#36a3d9'
+magenta = '#f07178'
+cyan = '#95e6cb'
+white = '#ffffff'
+bblack = '#323232'
+bred = '#ff6565'
+bgreen = '#eafe84'
+byellow = '#fff779'
+bblue = '#68d5ff'
+bmagenta = '#ffa3aa'
+bcyan = '#c7fffd'
+bwhite = '#ffffff'
+
+[palettes.blackdiamond]
+# colors
+blue = '#11B7D4'
+green = '#00a884'
+greenAlt = '#3585bb'
+orange = '#d4770c'
+pink = '#d46ec0'
+purple = '#a85ff1'
+red = '#E35535'
+salmon = '#c62f52'
+turquoize = '#38c7bd'
+yellow = '#c7910c'
+# levels
+danger = '#E35535'
+info = '#11B7D4'
+success = '#00a884'
+warning = '#d4770c'
+# ui
+border = '#040506'
+default = '#bec6d0'
+defaultMain = '#a0acbb'
+defaultalt = '#475262'
+primary = '#11B7D4'
+primaryalt = '#1c2027'
+uibackground = '#111418'
+uibackgroundalt = '#0c0f11'
+uibackgroundmid = '#0f1215'
+
+[status] # customized end segments for the prompt based on exit code
+disabled = false
+symbol = "[$status](underline fg:warning bg:uibackgroundmid)[▐](fg:warning)"
+# Don't show exit code <0> on success
+success_symbol = "[Ø](bold fg:success bg:uibackgroundmid)[▐](fg:green)"
+not_executable_symbol = "[$status](underline fg:warning bg:uibackgroundmid)[▐](bg:uibackgroundmidfg:warning)"
+not_found_symbol = "[$status](underline fg:info bg:uibackgroundmid)[▐](bg:uibackgroundmid fg:info)"
+sigint_symbol = "[$status](underline fg:danger bg:uibackgroundmid)[▐](bg:uibackgroundmid fg:danger)"
+signal_symbol = "[$status](underline fg:success bg:uibackgroundmid)[▐](bg:uibackgroundmid fg:info)"
+style = "bold fg:default bg:uibackgroundmid"
+map_symbol = true
+recognize_signal_code = true
+format = '[$symbol]($style)'
+
+
+[custom.left] # customized end segments for the prompt based on exit code
+when = true
+ignore_timeout = true
+
+style = '$status'
+format = '$symbol'
+
+[custom.dot]
+when = '! git branch'
+ignore_timeout = true
+symbol = "•"
+style = "default"
+format = "[$symbol]($style)"
 
 # Command Duration Configuration
 [cmd_duration]
 format = '[ $duration ]($style)'
 min_time = 1_000
-style = 'color11'
+style = 'yellow'
 
 # Background Jobs Configuration
 [jobs]
 disabled = false
-symbol = "●"
-style = "color3"
-number_threshold = 2
+symbol = "▌"
+style = "yellow"
+number_threshold = 1
 symbol_threshold = 1
-format = '[$number$symbol]($style)'
+format = '[$symbol]($style)'
 
 # Directory Configuration
 [directory]
-style = 'color4'
+style = 'blue'
 fish_style_pwd_dir_length = 2
 home_symbol = '⌂ Home'
 format = '[$path]($style)[$read_only]($read_only_style)'
@@ -66,16 +165,36 @@ disabled = false
 
 # Git Branch Configuration
 [git_branch]
-format = '[$symbol](color2)[$branch(:$remote_branch)[·](bold color10)]($style)'
-symbol = '[·](bold color13)𖤝 '
-style = 'color5'
+format = ' $symbol [$branch(:$remote_branch)]($style) '
+symbol = '[𖤝](bold green)'
+style = 'italic pink'
 truncation_length = 4
 truncation_symbol = ''
 
 # Git Status Configuration
 [git_status]
-format = '[[$all_status$ahead_behind]($style)](color8)'
-style = 'fg:color3 bg:color8'
+# format = '[[$all_status$ahead_behind]($style)](uibackgroundalt)'
+# style = 'fg:yellow bg:uibackgroundalt'
+disabled = false
+style = "fg:info bg:uibackgroundalt"
+stashed = "[ ${count}](fg:pink bg:uibackgroundalt)"
+staged = "[󰸞 ${count}](fg:success bg:uibackgroundalt)"
+modified = "[󰑕 ${count}](fg:info bg:uibackgroundalt)"
+typechanged = "[󰶻 ${count}](fg:default bg:uibackgroundalt)"
+renamed = "[󰗧${count}](fg:default bg:uibackgroundalt)"
+untracked = "[󰏢${count}](fg:default bg:uibackgroundalt)"
+deleted = "[${count}](fg:warning bg:uibackgroundalt)"
+conflicted = "[ ${count}](fg:danger bg:uibackgroundalt)"
+ahead = "[󰞙 ${count}](fg:#64b141 bg:uibackgroundalt)"
+behind = "[󰞖 ${count}](fg:#e03c31 bg:uibackgroundalt)"
+up_to_date = "[󰜝](fg:danger bg:uibackgroundalt)"
+diverged = """\
+    [ 󰽜](fg:danger bg:uibackgroundalt)\
+    [${ahead_count}](fg:#64b141 bg:uibackgroundalt)\
+    [󰓢](fg:default bg:uibackgroundalt)\
+    [${behind_count}](fg:#e03c31 bg:uibackgroundalt)\
+"""
+format = "[($stashed$staged$untracked$modified$renamed$deleted$conflicted)($ahead_behind)]($style)"
 
 # Language Symbols
 [c]
@@ -86,7 +205,7 @@ style = 'blue'
 [rust]
 format = '[ $symbol]($style)'
 symbol = ' '
-style = 'color1'
+style = 'red'
 
 [cmake]
 format = '[ $symbol]($style)'
@@ -142,9 +261,9 @@ symbol = ' '
 
 # Character Symbols
 [character]
-success_symbol = '[▶](color14)'
-error_symbol = '[ᛝ](color9)'
-vimcmd_symbol = '[◆](color2)'
+success_symbol = '[▶](defaultMain)'
+error_symbol = '[▶](salmon)'
+vimcmd_symbol = '[◆](green)'
 
 # Package Configuration
 [package]
@@ -153,61 +272,5 @@ disabled = true
 # Fill Configuration
 [fill]
 symbol = "┈"
-style = '$style'
+style = 'fg:uibackgroundalt'
 
-# Palettes Configuration
-[palettes.ayudark]
-main-dark = '#000000'
-main-light = '#2E3338'
-text = '#dfdfdf'
-text-light = '#ffffff'
-text-dark = '#8f8f8f'
-text-disabled = '#7f7f7f'
-primary = '#0f8fcf'
-info = '#FFD166'
-success = '#06D6A0'
-error = '#EF476F'
-warn = '#E55934'
-main = '#0f1419'
-background = '#0f1419'
-foreground = '#e6e1cf'
-cursor = '#f29718'
-selection = '#253340'
-cursorAccent = '#0f1419'
-black = '#000000'
-red = '#ff3333'
-green = '#b8cc52'
-yellow = '#e7c547'
-blue = '#36a3d9'
-magenta = '#f07178'
-cyan = '#95e6cb'
-white = '#ffffff'
-bblack = '#323232'
-bred = '#ff6565'
-bgreen = '#eafe84'
-byellow = '#fff779'
-bblue = '#68d5ff'
-bmagenta = '#ffa3aa'
-bcyan = '#c7fffd'
-bwhite = '#ffffff'
-
-[palettes.bearded-bear]
-background = '#1c2433'
-foreground = '#d0d7e4'
-cursor = '#eacd61'
-color0 = '#1c2433'
-color8 = '#3e4f71'
-color1 = '#e35535'
-color9 = '#ff4319'
-color2 = '#3cec85'
-color10 = '#29ff82'
-color3 = '#eacd61'
-color11 = '#ffd94c'
-color4 = '#69c3ff'
-color12 = '#69c3ff'
-color5 = '#f38cec'
-color13 = '#ff80f6'
-color6 = '#22ecdb'
-color14 = '#0fffeb'
-color7 = '#d0d7e4'
-color15 = '#ffffff'

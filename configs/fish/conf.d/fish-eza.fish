@@ -9,8 +9,9 @@ if test "$TERM" = "dumb"
     return 0
 end
 
+
 if command -q eza
-    set -l enable_autocd 0
+    set -l enable_autocd 1
     set -g eza_params \
         --git --icons --group --group-directories-first \
         --time-style=long-iso --color-scale=all

@@ -33,15 +33,15 @@ map("c", "<C-u>", "<Up>")
 map("c", "<C-e>", "<Down>")
 
 -- word navigation keys
-map("", "h", "e")
-map("", "H", "E")
+map("", "m", "e")
+map("", "M", "E")
 
 -- insert mode keys
 map("n", "k", function() return #vim.fn.getline(".") == 0 and '"_cc' or "i" end, { expr = true })
 map("v", "k", "i")
 map("v", "K", "I")
-map("", "m", "o")
-map("", "M", "O")
+map("", "h", "o")
+map("", "H", "O")
 
 map("n", "<C-n>", "I")
 map("i", "<C-n>", "<Esc>I")
