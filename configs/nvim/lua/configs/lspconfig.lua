@@ -1,40 +1,27 @@
 require("nvchad.configs.lspconfig").defaults()
 
 local lspconfig = require "lspconfig"
-local servers = { "html", "cssls", "biome", "bash-language-server" }
+local servers = { "shellcheck", "biome", "bashls" }
 vim.lsp.enable(servers)
 
-lspconfig.rust_analyzer.setup({
-    on_attach = function(client, bufnr)
-        require'completion'.on_attach(client)
-        vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
-    end
-})
 
-lspconfig.biome.setup({
-  -- Your Biome specific settings will go here
-  -- For example, to enable formatting on save (requires Neovim 0.8+):
-  on_attach = function(client, bufnr)
-    if client.name == 'biome' then
-      -- Enable formatting on save
-      vim.api.nvim_create_autocmd('BufWritePre', {
-        buffer = bufnr,
-        callback = function()
-          vim.lsp.buf.format({ bufnr = bufnr })
-        end,
-      })
-    end
+local util = require 'lspconfig.util'
+vim.lsp.config('biome', {
+  cmd = { "biome", "lsp-proxy" },
+  filetypes = { "astro", "css", "graphql", "html", "javascript", "javascriptreact", "json", "jsonc", "svelte", "typescript", "typescript.tsx", "typescriptreact", "vue" },
+  workspace_required = true,
+  root_dir = function(bufnr, on_dir)
+    local fname = vim.api.nvim_buf_get_name(bufnr)
+    local root_files = { 'biome.json', 'biome.jsonc' }
+    root_files = util.insert_package_json(root_files, 'biome', fname)
+    local root_dir = vim.fs.dirname(vim.fs.find(root_files, { path = fname, upward = true })[1])
+    on_dir(root_dir)
   end,
-  settings = {
-    -- You can add Biome-specific settings here, e.g.:
-    biome = {
-      linter = {
-        enabled = true,
-      },
-      formatter = {
-        enabled = true,
-      },
-    },
-  },
 })
 
+lspconfig.rust_analyzer.setup({
+  on_attach = function(client, bufnr)
+    require 'completion'.on_attach(client)
+    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+  end
+})

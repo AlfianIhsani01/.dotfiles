@@ -23,19 +23,19 @@ while [ $attempt -le $max_attempts ]; do
     echo "Need to download dotfiles? (y/n)"
     read -r anw
     case "$anw" in
-      [Nn]*)
-        echo "Exiting as per user request."
-        exit 1
-        ;;
-      *)
-        # Assuming 'check_and_install_packages' is a function defined elsewhere
-        # If not, you'll need to define it or replace it with direct package installation commands.
-        # For example: sudo apt-get update && sudo apt-get install -y git
-        echo "Attempting to download dotfiles..."
-        check_and_install_packages git # Make sure this function is defined or replace it
-        git clone "$DOT_URL" "$HOME/.dotfiles" # Corrected clone destination to .dotfiles
-        export DOTHOME
-        ;;
+    [Nn]*)
+      echo "Exiting as per user request."
+      exit 1
+      ;;
+    *)
+      # Assuming 'check_and_install_packages' is a function defined elsewhere
+      # If not, you'll need to define it or replace it with direct package installation commands.
+      # For example: sudo apt-get update && sudo apt-get install -y git
+      echo "Attempting to download dotfiles..."
+      check_and_install_packages git         # Make sure this function is defined or replace it
+      git clone "$DOT_URL" "$HOME/.dotfiles" # Corrected clone destination to .dotfiles
+      export DOTHOME
+      ;;
     esac
   fi
   attempt=$((attempt + 1))
@@ -60,21 +60,23 @@ if [ "$0" = "$script_name" ] || [ "$0" = "./$script_name" ]; then
   fi
 fi
 
-source $DOTHOME/script/symlink.sh
+source "$DOTHOME/script/symlink.sh"
 echo "Choose login shell 1)zsh 2)fish"
 read -r LOGINSHELL
 case "$LOGINSHELL" in
-  1) echo "set zsh as login shell"
-    chsh -s $(which zsh)
+1)
+  echo "set zsh as login shell"
+  chsh -s "$(which zsh)"
   ;;
-  2) echo "set fish as login shell"
-    chsh -s $(which fish)
+2)
+  echo "set fish as login shell"
+  chsh -s "$(which fish)"
   ;;
-  *) echo "none choosed will use zsh instead"
-    chsh -s $(which zsh)
+*)
+  echo "none choosed will use zsh instead"
+  chsh -s "$(which zsh)"
   ;;
 esac
-
 
 # termux
 source $DOTHOME/script/termux.sh

@@ -33,15 +33,15 @@ map("c", "<C-u>", "<Up>")
 map("c", "<C-e>", "<Down>")
 
 -- word navigation keys
-map("", "m", "e")
-map("", "M", "E")
+map("", "h", "e")
+map("", "H", "E")
 
 -- insert mode keys
 map("n", "k", function() return #vim.fn.getline(".") == 0 and '"_cc' or "i" end, { expr = true })
 map("v", "k", "i")
 map("v", "K", "I")
-map("", "h", "o")
-map("", "H", "O")
+map("", "m", "o")
+map("", "M", "O")
 
 map("n", "<C-n>", "I")
 map("i", "<C-n>", "<Esc>I")
@@ -81,6 +81,7 @@ map({ "n", "v" }, "tN", ":-tabmove<CR>", { silent = true })
 map({ "n", "v" }, "tI", ":+tabmove<CR>", { silent = true })
 
 -- other keys
+map('n', '<leader>_', '<cmd>set wrap!<CR>', { desc = "toggle line wrap", silent = true })
 map("n", "<C-S-M-s>", ":up<CR>", { silent = true })
 map("i", "<C-S-M-s>", "<Esc>:up<CR>a", { silent = true })
 map("v", "<C-S-M-s>", "<Esc>:up<CR>", { silent = true })
@@ -96,4 +97,4 @@ map({ "i", "v" }, "<C-->", "<Esc><C-a>a")
 map("", "<C-=>", "<C-x>")
 map({ "i", "v" }, "<C-=>", "<Esc><C-x>a")
 
-map("n", "<leader>`", function() require("lazy").profile() end)
+map("n", "<leader>`", function() require("lazy").profile() end, { desc = "View lazy profile" })

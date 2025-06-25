@@ -1,10 +1,9 @@
 # Starship Configuration
 
 format = """
-$fill\
+[$fill](fg:defaultalt)\
 $cmd_duration\
 $line_break\
-$jobs\
 $username\
 $directory\
 $package\
@@ -27,7 +26,8 @@ $meson\
 $nats\
 $direnv\
 $env_var\
-$fill\
+[$fill](fg:uibackgroundalt bg:uibackgroundalt)\
+$jobs\
 $status\
 $line_break\
 $sudo\
@@ -109,51 +109,53 @@ uibackgroundmid = '#0f1215'
 
 [status] # customized end segments for the prompt based on exit code
 disabled = false
-symbol = "[$status](underline fg:warning bg:uibackgroundmid)[▐](fg:warning)"
-# Don't show exit code <0> on success
-success_symbol = "[Ø](bold fg:success bg:uibackgroundmid)[▐](fg:green)"
-not_executable_symbol = "[$status](underline fg:warning bg:uibackgroundmid)[▐](bg:uibackgroundmidfg:warning)"
-not_found_symbol = "[$status](underline fg:info bg:uibackgroundmid)[▐](bg:uibackgroundmid fg:info)"
-sigint_symbol = "[$status](underline fg:danger bg:uibackgroundmid)[▐](bg:uibackgroundmid fg:danger)"
-signal_symbol = "[$status](underline fg:success bg:uibackgroundmid)[▐](bg:uibackgroundmid fg:info)"
-style = "bold fg:default bg:uibackgroundmid"
+symbol = "[$status](underline fg:warning bg:uibackgroundalt)[▐](fg:warning bg:uibackgroundalt)"
+success_symbol = "[0̷](bold fg:success bg:uibackgroundalt)[▐](fg:green bg:uibackgroundalt)"
+not_executable_symbol = "[$status](underline fg:warning bg:uibackgroundalt)[▐](fg:warning bg:uibackgroundalt)"
+not_found_symbol = "[$status](underline fg:info bg:uibackgroundalt bg:uibackgroundalt)[▐](fg:info bg:uibackgroundalt)"
+sigint_symbol = "[$status](underline fg:danger bg:uibackgroundalt)[▐](fg:danger bg:uibackgroundalt)"
+signal_symbol = "[$status](underline fg:success bg:uibackgroundalt)[▐](fg:info bg:uibackgroundalt)"
+style = "$style"
 map_symbol = true
 recognize_signal_code = true
 format = '[$symbol]($style)'
 
+[character]
+success_symbol = '[▶](defaultMain)'
+error_symbol = '[▶](salmon)'
+vimcmd_symbol = '[◆](green)'
 
-[custom.left] # customized end segments for the prompt based on exit code
-when = true
-ignore_timeout = true
+[username]
+disabled = false
+show_always = true
+aliases = { 'u0_a290' = "akal" }
+style_root = "bold fg:danger bg:uibackgroundalt"
+style_user = "fg:purple bg:uibackgroundalt"
+format = "[▌$user]($style)[› ](bg:uibackgroundalt)"
 
-style = '$status'
-format = '$symbol'
 
 [custom.dot]
 when = '! git branch'
 ignore_timeout = true
 symbol = "•"
-style = "default"
+style = "bold pink"
 format = "[$symbol]($style)"
 
-# Command Duration Configuration
 [cmd_duration]
 format = '[ $duration ]($style)'
 min_time = 1_000
-style = 'yellow'
+style = 'bold yellow'
 
-# Background Jobs Configuration
 [jobs]
 disabled = false
-symbol = "▌"
-style = "yellow"
+symbol = "║"
+style = "fg:red bg:uibackgroundalt"
 number_threshold = 1
 symbol_threshold = 1
-format = '[$symbol]($style)'
+format = '[$number]($style)$symbol'
 
-# Directory Configuration
 [directory]
-style = 'blue'
+style = 'fg:blue bg:uibackgroundalt'
 fish_style_pwd_dir_length = 2
 home_symbol = '⌂ Home'
 format = '[$path]($style)[$read_only]($read_only_style)'
@@ -163,38 +165,34 @@ truncation_symbol = "—"
 [direnv]
 disabled = false
 
-# Git Branch Configuration
 [git_branch]
-format = ' $symbol [$branch(:$remote_branch)]($style) '
-symbol = '[𖤝](bold green)'
+format = '$symbol[$branch(:$remote_branch)]($style) '
+symbol = '[ 𖤝 ](bold green)'
 style = 'italic pink'
 truncation_length = 4
 truncation_symbol = ''
 
-# Git Status Configuration
 [git_status]
-# format = '[[$all_status$ahead_behind]($style)](uibackgroundalt)'
-# style = 'fg:yellow bg:uibackgroundalt'
 disabled = false
-style = "fg:info bg:uibackgroundalt"
-stashed = "[ ${count}](fg:pink bg:uibackgroundalt)"
-staged = "[󰸞 ${count}](fg:success bg:uibackgroundalt)"
-modified = "[󰑕 ${count}](fg:info bg:uibackgroundalt)"
-typechanged = "[󰶻 ${count}](fg:default bg:uibackgroundalt)"
-renamed = "[󰗧${count}](fg:default bg:uibackgroundalt)"
-untracked = "[󰏢${count}](fg:default bg:uibackgroundalt)"
-deleted = "[${count}](fg:warning bg:uibackgroundalt)"
-conflicted = "[ ${count}](fg:danger bg:uibackgroundalt)"
-ahead = "[󰞙 ${count}](fg:#64b141 bg:uibackgroundalt)"
-behind = "[󰞖 ${count}](fg:#e03c31 bg:uibackgroundalt)"
-up_to_date = "[󰜝](fg:danger bg:uibackgroundalt)"
+style = "fg:info"
+stashed = "[☐${count}](fg:pink)"
+staged = "[✔${count}](fg:success)"
+modified = "[↳${count}](fg:info)"
+typechanged = "[»${count}](fg:default)"
+renamed = "[‗${count}](fg:default)"
+untracked = "[?${count}](fg:default)"
+deleted = "[!${count}](fg:warning)"
+conflicted = "[⚐${count}](fg:danger)"
+ahead = "[↑${count}](fg:#64b141)"
+behind = "[↓${count}](fg:#e03c31)"
+up_to_date = "[০](fg:success)"
 diverged = """\
-    [ 󰽜](fg:danger bg:uibackgroundalt)\
-    [${ahead_count}](fg:#64b141 bg:uibackgroundalt)\
-    [󰓢](fg:default bg:uibackgroundalt)\
-    [${behind_count}](fg:#e03c31 bg:uibackgroundalt)\
+    [󰽜 ](fg:danger)\
+    [${ahead_count}](fg:#64b141)\
+    [⇵](fg:default)\
+    [${behind_count}](fg:#e03c31)\
 """
-format = "[($stashed$staged$untracked$modified$renamed$deleted$conflicted)($ahead_behind)]($style)"
+format = "[($stashed$staged$untracked$modified$renamed$deleted$conflicted)($ahead_behind)]($style)"
 
 # Language Symbols
 [c]
@@ -259,18 +257,10 @@ symbol = ' '
 format = '[ $symbol]($style)'
 symbol = ' '
 
-# Character Symbols
-[character]
-success_symbol = '[▶](defaultMain)'
-error_symbol = '[▶](salmon)'
-vimcmd_symbol = '[◆](green)'
-
-# Package Configuration
 [package]
 disabled = true
 
-# Fill Configuration
 [fill]
-symbol = "┈"
-style = 'fg:uibackgroundalt'
+symbol = "─"
+style = '$style'
 

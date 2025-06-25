@@ -3,7 +3,8 @@ local options = {
     lua = { "stylua" },
     -- css = { "prettier" },
     -- html = { "prettier" },
-    json = { "biome" }
+    sh = { "shfmt" },
+    json = { "biome format" }
   },
 
   -- format_on_save = {
