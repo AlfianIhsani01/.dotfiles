@@ -83,7 +83,7 @@ bwhite = '#ffffff'
 # colors
 blue = '#11B7D4'
 green = '#00a884'
-greenAlt = '#3585bb'
+greenalt = '#3585bb'
 orange = '#d4770c'
 pink = '#d46ec0'
 purple = '#a85ff1'
@@ -128,7 +128,7 @@ vimcmd_symbol = '[◆](green)'
 [username]
 disabled = false
 show_always = true
-aliases = { 'u0_a290' = "akal" }
+aliases = { 'u0_a290' = 'akal' }
 style_root = "bold fg:danger bg:uibackgroundalt"
 style_user = "fg:purple bg:uibackgroundalt"
 format = "[▌$user]($style)[› ](bg:uibackgroundalt)"
@@ -168,7 +168,7 @@ disabled = false
 [git_branch]
 format = '$symbol[$branch(:$remote_branch)]($style) '
 symbol = '[ 𖤝 ](bold green)'
-style = 'italic pink'
+style = 'underline pink'
 truncation_length = 4
 truncation_symbol = ''
 
@@ -185,7 +185,7 @@ deleted = "[!${count}](fg:warning)"
 conflicted = "[⚐${count}](fg:danger)"
 ahead = "[↑${count}](fg:#64b141)"
 behind = "[↓${count}](fg:#e03c31)"
-up_to_date = "[০](fg:success)"
+up_to_date = "[◼](fg:greenalt)"
 diverged = """\
     [󰽜 ](fg:danger)\
     [${ahead_count}](fg:#64b141)\

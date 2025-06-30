@@ -1,0 +1,91 @@
+[color]
+  branch = auto
+  diff = auto
+  interactive = auto
+  status = auto
+  grep = auto
+  ui = auto
+[color "branch"]
+  current = green
+  remote = yellow
+
+[core]
+  pager = less -FRSX
+  editor = nvim
+
+[alias]
+  co = checkout
+  st = status -sb
+  br = branch
+  ci = commit
+  ca = commit -a
+  fo = fetch origin
+  d = !git --no-pager diff
+  dt  = difftool
+  ps = "!git push origin $(git rev-parse --abbrev-ref HEAD)"
+  pl = "!git pull origin $(git rev-parse --abbrev-ref HEAD)"
+  st = status
+  br = branch
+  ba = branch -a
+  bm = branch --merged
+  bn = branch --no-merged
+  df = "!git hist | peco | awk '{print $2}' | xargs -I {} git diff {}^ {}"
+  stat = !git --no-pager diff --stat
+  open = "!hub browse"
+  type = cat-file -t
+  dump = cat-file -p
+  find = "!f() { git log --pretty=format:\"%h %cd [%cn] %s%d\" --date=relative -S'pretty' -S\"$@\" | peco | awk '{print $1}' | xargs -I {} git diff {}^ {}; }; f"
+
+  # edit conflicted file on merge
+  edit-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; vim `f`"
+
+  # add conflicted file on merge
+  add-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; git add `f`"
+
+  # Set remotes/origin/HEAD -> defaultBranch (copied from https://stackoverflow.com/a/67672350/14870317)
+  remoteSetHead = remote set-head origin --auto
+
+  # Get default branch name
+  defaultBranch = !git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4
+
+  # Clean merged branches
+  sweep = !git branch --merged $(git defaultBranch) | grep -E -v " $(git defaultBranch)$" | xargs -r git branch -d && git remote prune origin
+
+  hist = log --pretty=format:\"%Cgreen%h %Creset%cd %Cblue[%cn] %Creset%s%C(yellow)%d%C(reset)\" --graph --date=relative --decorate --all
+  lg = log --graph --all --pretty=format:'%Cred%h%Creset - %s %Cgreen(%cr) %C(bold blue)%an%Creset %C(yellow)%d%Creset'
+  llog = log --graph --name-status --pretty=format:\"%C(red)%h %C(reset)(%cd) %C(green)%an %Creset%s %C(yellow)%d%Creset\" --date=relative
+
+  # Checkout to defaultBranch
+  m = !git checkout $(git defaultBranch)
+
+  # Removes a file from the index
+  unstage = reset HEAD --
+
+[diff]
+  tool = nvimdiff
+[difftool "nvimdiff"]
+  cmd = nvim -d \"$LOCAL\" \"$REMOTE\"
+  path = 
+[mergetool "nvimdiff"]
+  cmd = nvim -d \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+  trustExitCode = true
+[help]
+  autocorrect = 1
+
+[push]
+  default = simple
+
+[branch "master"]
+  mergeoptions = --no-edit
+
+[pull]
+  rebase = false
+
+[init]
+  defaultBranch = master
+
+[user]
+	email = ihsani.akmal.0@gmail.com
+	name = Alfian Ihsani Akmal
+[safe]
+	directory = /storage/emulated/0/Projects/CustomFont

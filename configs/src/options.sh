@@ -1,25 +1,15 @@
-#!/data/data/com.termux/files/usr/bin/nv zsh
+#!/data/data/com.termux/files/usr/bin/env bash
 
+# General
+export LC_CTYPE="C.UTF-8"
+export LC_ALL="${LC_ALL:-C.UTF-8}"
+export VISUAL="termux-open"
+export EDITOR="nvim"
 # History
-HISTFILE=~/.dotfiles/configs/zsh/dot-zsh_history
-HISTSIZE=2000
-SAVEHIST=1000
-setopt SHARE_HISTORY
-setopt APPEND_HISTORY
-setopt INC_APPEND_HISTORY
+export HISTFILESIZE=2000
+export HISTSIZE=500
+export HISTTIMEFORMAT="%F %T " # add timestamp to history
 
-
-config_shortcut() {
-  folder=$1
-  if [[ $XDG_CONFIG_HOME != 0 ]]; then
-    config_path=$XDG_CONFIG_HOME
-  else
-    config_path=$HOME/.config
-  fi
-  if [[ $folder != 0 ]]; then
-    cd $config_path/$folder
-  else
-    cd $config_path
-  fi
-}
+# Don't put duplicate lines in the history and do not add lines that start with a space
+export HISTCONTROL=erasedups:ignoredups:ignorespace
 
