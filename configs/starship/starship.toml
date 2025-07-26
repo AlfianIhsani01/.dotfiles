@@ -110,7 +110,7 @@ uibackgroundmid = '#0f1215'
 [status] # customized end segments for the prompt based on exit code
 disabled = false
 symbol = "[$status](underline fg:warning bg:uibackgroundalt)[▐](fg:warning bg:uibackgroundalt)"
-success_symbol = "[0̷](bold fg:success bg:uibackgroundalt)[▐](fg:green bg:uibackgroundalt)"
+success_symbol = "[$status](bold fg:success bg:uibackgroundalt)[▐](fg:green bg:uibackgroundalt)"
 not_executable_symbol = "[$status](underline fg:warning bg:uibackgroundalt)[▐](fg:warning bg:uibackgroundalt)"
 not_found_symbol = "[$status](underline fg:info bg:uibackgroundalt bg:uibackgroundalt)[▐](fg:info bg:uibackgroundalt)"
 sigint_symbol = "[$status](underline fg:danger bg:uibackgroundalt)[▐](fg:danger bg:uibackgroundalt)"
@@ -123,7 +123,7 @@ format = '[$symbol]($style)'
 [character]
 success_symbol = '[▶](defaultMain)'
 error_symbol = '[▶](salmon)'
-vimcmd_symbol = '[◆](green)'
+vimcmd_symbol = '[♦](green)'
 
 [username]
 disabled = false
@@ -148,7 +148,7 @@ style = 'bold yellow'
 
 [jobs]
 disabled = false
-symbol = "║"
+symbol = "╎"
 style = "fg:red bg:uibackgroundalt"
 number_threshold = 1
 symbol_threshold = 1
@@ -175,21 +175,21 @@ truncation_symbol = ''
 [git_status]
 disabled = false
 style = "fg:info"
-stashed = "[☐${count}](fg:pink)"
+stashed = "[☐${count}](bold fg:pink)"
 staged = "[✔${count}](fg:success)"
-modified = "[↳${count}](fg:info)"
+modified = "[↳${count}](bold fg:info)"
 typechanged = "[»${count}](fg:default)"
 renamed = "[‗${count}](fg:default)"
 untracked = "[?${count}](fg:default)"
 deleted = "[!${count}](fg:warning)"
 conflicted = "[⚐${count}](fg:danger)"
-ahead = "[↑${count}](fg:#64b141)"
-behind = "[↓${count}](fg:#e03c31)"
-up_to_date = "[◼](fg:greenalt)"
+ahead = "[↥${count}](bold fg:#64b141)"
+behind = "[↧${count}](bold fg:#e03c31)"
+up_to_date = "[ ](bold fg:greenalt)"
 diverged = """\
     [󰽜 ](fg:danger)\
     [${ahead_count}](fg:#64b141)\
-    [⇵](fg:default)\
+    [⇵](bold fg:default)\
     [${behind_count}](fg:#e03c31)\
 """
 format = "[($stashed$staged$untracked$modified$renamed$deleted$conflicted)($ahead_behind)]($style)"
@@ -261,6 +261,6 @@ symbol = ' '
 disabled = true
 
 [fill]
-symbol = "─"
+symbol = "₋"
 style = '$style'
 

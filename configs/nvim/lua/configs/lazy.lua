@@ -14,6 +14,7 @@ return {
   performance = {
     rtp = {
       disabled_plugins = {
+        "base46",
         "2html_plugin",
         "tohtml",
         "getscript",

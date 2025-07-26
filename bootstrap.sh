@@ -1,82 +1,424 @@
-#!/usr/bin/env sh
+#!/bin/bash
 
-DOT_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
-DOTHOME="$HOME/.dotfiles"
-script_name=$(basename "$0")
+# ------------------------------------------------------------------------------
+# Dotfiles Setup Script
+# Downloads and configures dotfiles with package installation
+# Enhanced bash version with improved error handling and user experience
+# ------------------------------------------------------------------------------
 
-attempt=1
-max_attempts=2
+set -euo pipefail
 
-while [ $attempt -le $max_attempts ]; do
-  if [ -d "$HOME/.dotfiles" ] && [ -f "$HOME/.dotfiles/$script_name" ]; then
-    export DOTHOME
-    echo "Dotfiles found at $DOTHOME."
-    break # Exit the loop if dotfiles are found
-  else
-    echo "Dotfiles not found at $DOTHOME (Attempt $attempt of $max_attempts)."
+# Configuration
+declare -r DFS_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
+declare -r DFS_HOME="${HOME:-$XDG_CONFIG_HOME}/.dotfiles"
+declare -r SCRIPT_NAME="${0##*/}"
+declare -r MAX_ATTEMPTS=2
 
-    if [ $attempt -eq $max_attempts ]; then
-      echo "Maximum attempts reached. Exiting."
-      exit 1
+# Colors for output
+declare -r RED='\033[0;31m'
+declare -r GREEN='\033[0;32m'
+declare -r YELLOW='\033[0;33m'
+declare -r BLUE='\033[0;34m'
+declare -r CYAN='\033[0;36m'
+declare -r BOLD='\033[1m'
+declare -r NC='\033[0m'
+
+# Shell options with full paths
+declare -rA SHELL_OPTIONS=(
+  [1]="/usr/bin/fish"
+  [2]="/bin/bash"
+)
+
+declare -rA SHELL_NAMES=(
+  [1]="fish"
+  [2]="bash"
+)
+
+# --- Logging functions ---
+log_info() {
+  printf "${BLUE}[INFO]${NC} %s\n" "$*"
+}
+
+log_success() {
+  printf "${GREEN}[SUCCESS]${NC} %s\n" "$*"
+}
+
+log_warning() {
+  printf "${YELLOW}[WARNING]${NC} %s\n" "$*"
+}
+
+log_error() {
+  printf "${RED}[ERROR]${NC} %s\n" "$*" >&2
+}
+
+log_step() {
+  printf "\n${BOLD}${CYAN}=== %s ===${NC}\n" "$*"
+}
+
+# --- Utility functions ---
+prompt_yes_no() {
+  local prompt="$1"
+  local default="${2:-y}"
+  local response
+
+  while true; do
+    printf "%s [%s]: " "$prompt" "$default"
+    read -r response
+    response="${response:-$default}"
+
+    case "${response,,}" in
+    y | yes) return 0 ;;
+    n | no) return 1 ;;
+    *) log_warning "Please answer 'y' or 'n'" ;;
+    esac
+  done
+}
+
+# --- Check if dotfiles exist and are valid ---
+validate_dotfiles() {
+  [[ -d "$DFS_HOME" ]] || return 1
+  [[ -f "$DFS_HOME/$SCRIPT_NAME" ]] || return 1
+  [[ -d "$DFS_HOME/.git" ]] || return 1
+  return 0
+}
+
+# --- Download dotfiles with retry logic ---
+download_dotfiles() {
+  local attempt=1
+
+  log_step "Downloading Dotfiles"
+
+  while ((attempt <= MAX_ATTEMPTS)); do
+    log_info "Checking for dotfiles at $DFS_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
+
+    if validate_dotfiles; then
+      log_success "Dotfiles found and validated at $DFS_HOME"
+      export DFS_HOME
+      return 0
     fi
 
-    echo "Need to download dotfiles? (y/n)"
-    read -r anw
-    case "$anw" in
-    [Nn]*)
-      echo "Exiting as per user request."
+    log_warning "Dotfiles not found or invalid"
+
+    if ((attempt == MAX_ATTEMPTS)); then
+      log_error "Maximum attempts reached"
+      return 1
+    fi
+
+    if prompt_yes_no "Clone dotfiles with Git?"; then
+      log_info "Installing git if needed..."
+      if command -v check_and_install_packages &>/dev/null; then
+        check_and_install_packages git
+      else
+        # Fallback package installation
+        if command -v apt-get &>/dev/null; then
+          sudo apt-get update && sudo apt-get install -y git
+        elif command -v pkg &>/dev/null; then
+          pkg install -y git
+        elif command -v dnf &>/dev/null; then
+          sudo dnf install -y git
+        else
+          log_error "Cannot install git automatically. Please install git manually."
+          return 1
+        fi
+      fi
+
+      log_info "Cloning dotfiles repository..."
+      if [[ -d "$DFS_HOME" ]]; then
+        log_warning "Removing existing incomplete dotfiles directory"
+        rm -rf "$DFS_HOME"
+      fi
+
+      if git clone --depth 1 "$DFS_URL" "$DFS_HOME"; then
+        log_success "Dotfiles cloned successfully"
+        export DFS_HOME
+      else
+        log_error "Failed to clone dotfiles repository"
+        ((attempt++))
+        continue
+      fi
+    else
+      log_error "Cannot proceed without dotfiles"
+      return 1
+    fi
+
+    ((attempt++))
+    [[ $attempt -le $MAX_ATTEMPTS ]] && sleep 2
+  done
+
+  return 1
+}
+
+# --- Source dotfiles scripts safely ---
+source_dotfiles_script() {
+  local script_path="$1"
+  local script_name="${script_path##*/}"
+
+  if [[ -f "$DFS_HOME/$script_path" ]]; then
+    log_info "Sourcing $script_name..."
+    # shellcheck source=/dev/null
+    source "$DFS_HOME/$script_path"
+    return 0
+  else
+    log_warning "$script_name not found at $DFS_HOME/$script_path"
+    return 1
+  fi
+}
+
+# --- Install packages from dotfiles configuration ---
+install_packages() {
+  log_step "Installing Packages"
+
+  # Source function definitions
+  if ! source_dotfiles_script "script/functions.sh"; then
+    log_warning "Functions script not found, using fallback methods"
+  fi
+
+  # Source package lists
+  if source_dotfiles_script "script/packages.list"; then
+    local package_groups=()
+
+    # Check which package groups are defined
+    [[ -n "${DEVLANG:-}" ]] && package_groups+=(DEVLANG)
+    [[ -n "${UTILITIES:-}" ]] && package_groups+=(UTILITIES)
+    [[ -n "${DEVTOOLS:-}" ]] && package_groups+=(DEVTOOLS)
+
+    if [[ ${#package_groups[@]} -gt 0 ]]; then
+      for group in "${package_groups[@]}"; do
+        local packages
+        case "$group" in
+        DEVLANG) packages=($DEVLANG) ;;
+        UTILITIES) packages=($UTILITIES) ;;
+        DEVTOOLS) packages=($DEVTOOLS) ;;
+        esac
+
+        log_info "Installing $group packages: ${packages[*]}"
+        if command -v check_and_install_packages &>/dev/null; then
+          check_and_install_packages "${packages[@]}"
+        else
+          log_warning "check_and_install_packages function not available"
+        fi
+      done
+    else
+      log_warning "No package groups found in packages.list"
+    fi
+  else
+    log_warning "Package list not found, skipping package installation"
+  fi
+}
+
+# --- Deploy dotfiles using stow ---
+deploy_dotfiles() {
+  log_step "Deploying Dotfiles"
+
+  if source_dotfiles_script "script/symlink.sh"; then
+    if command -v deploy &>/dev/null; then
+      log_info "Deploying dotfiles with stow..."
+      deploy
+      log_success "Dotfiles deployed successfully"
+    else
+      log_warning "Deploy function not found in symlink.sh"
+    fi
+  else
+    log_warning "Symlink script not found, skipping dotfile deployment"
+  fi
+}
+
+# --- Configure login shell ---
+configure_shell() {
+  log_step "Configuring Login Shell"
+
+  # Check available shells
+  local available_shells=()
+  for key in "${!SHELL_OPTIONS[@]}"; do
+    if [[ -x "${SHELL_OPTIONS[$key]}" ]]; then
+      available_shells+=("$key")
+    fi
+  done
+
+  if [[ ${#available_shells[@]} -eq 0 ]]; then
+    log_warning "No alternative shells found, keeping current shell"
+    return 0
+  fi
+
+  printf "\n${BOLD}Available shells:${NC}\n"
+  for key in "${available_shells[@]}"; do
+    printf "  [%s] %s (%s)\n" "$key" "${SHELL_NAMES[$key]}" "${SHELL_OPTIONS[$key]}"
+  done
+  printf "  [0] Keep current shell\n"
+
+  local choice
+  while true; do
+    printf "\nChoose login shell [1]: "
+    read -r choice
+    choice="${choice:-1}"
+
+    case "$choice" in
+    0)
+      log_info "Keeping current shell: $SHELL"
+      return 0
+      ;;
+    [1-3])
+      if [[ " ${available_shells[*]} " =~ " $choice " ]]; then
+        local shell_path="${SHELL_OPTIONS[$choice]}"
+        local shell_name="${SHELL_NAMES[$choice]}"
+
+        log_info "Setting $shell_name as login shell..."
+        if chsh -s "$shell_path"; then
+          log_success "$shell_name set as login shell"
+          log_info "Please log out and back in for changes to take effect"
+        else
+          log_error "Failed to change shell to $shell_name"
+        fi
+        return 0
+      else
+        log_warning "Shell not available: ${SHELL_NAMES[$choice]}"
+      fi
+      ;;
+    *)
+      log_warning "Invalid choice. Please select a number from the list."
+      ;;
+    esac
+  done
+}
+
+# --- Configure Termux-specific settings ---
+configure_termux() {
+  if [[ -n "${TERMUX_VERSION:-}" ]] || [[ "$PREFIX" == *"com.termux"* ]]; then
+    log_step "Configuring Termux"
+
+    if source_dotfiles_script "script/termux.sh"; then
+      log_success "Termux configuration completed"
+    else
+      log_warning "Termux script not found, skipping Termux-specific configuration"
+    fi
+  fi
+}
+
+# --- Main setup function ---
+main_setup() {
+  local packages=("$@")
+
+  log_step "Starting Dotfiles Setup"
+
+  # Download dotfiles if needed
+  if ! download_dotfiles; then
+    log_error "Failed to obtain dotfiles"
+    exit 1
+  fi
+
+  # Install packages
+  if [[ ${#packages[@]} -gt 0 ]]; then
+    log_info "Installing user-specified packages: ${packages[*]}"
+    if command -v check_and_install_packages &>/dev/null; then
+      check_and_install_packages "${packages[@]}"
+    else
+      log_warning "Package installation function not available"
+    fi
+  else
+    install_packages
+  fi
+
+  # Deploy dotfiles
+  deploy_dotfiles
+
+  # Configure shell
+  configure_shell
+
+  # Configure Termux if applicable
+  configure_termux
+
+  log_success "Dotfiles setup completed successfully!"
+  log_info "You may need to restart your terminal or log out/in for all changes to take effect"
+}
+
+# --- Help function ---
+show_help() {
+  cat <<EOF
+${BOLD}Dotfiles Setup Script${NC}
+
+${BOLD}USAGE:${NC}
+    $SCRIPT_NAME [OPTIONS] [PACKAGES...]
+
+${BOLD}DESCRIPTION:${NC}
+    Downloads and configures dotfiles from GitHub repository.
+    Installs specified packages and sets up the development environment.
+
+${BOLD}OPTIONS:${NC}
+    -h, --help      Show this help message
+    -v, --version   Show version information
+    --no-packages   Skip package installation
+    --no-shell      Skip shell configuration
+    --force         Force re-download of dotfiles
+
+${BOLD}EXAMPLES:${NC}
+    $SCRIPT_NAME                    # Setup with default packages
+    $SCRIPT_NAME git vim tmux       # Setup with specific packages
+    $SCRIPT_NAME --no-packages      # Setup without installing packages
+
+${BOLD}REPOSITORY:${NC}
+    $DFS_URL
+
+EOF
+}
+
+# --- Main execution ---
+main() {
+  local skip_packages=false
+  local skip_shell=false
+  local force_download=false
+  local packages=()
+
+  # Parse command line arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      show_help
+      exit 0
+      ;;
+    -v | --version)
+      printf "Dotfiles Setup Script v2.0\n"
+      printf "Enhanced bash version\n"
+      exit 0
+      ;;
+    --no-packages)
+      skip_packages=true
+      shift
+      ;;
+    --no-shell)
+      skip_shell=true
+      shift
+      ;;
+    --force)
+      force_download=true
+      shift
+      ;;
+    -*)
+      log_error "Unknown option: $1"
+      printf "Use --help for usage information\n"
       exit 1
       ;;
     *)
-      # Assuming 'check_and_install_packages' is a function defined elsewhere
-      # If not, you'll need to define it or replace it with direct package installation commands.
-      # For example: sudo apt-get update && sudo apt-get install -y git
-      echo "Attempting to download dotfiles..."
-      check_and_install_packages git         # Make sure this function is defined or replace it
-      git clone "$DOT_URL" "$HOME/.dotfiles" # Corrected clone destination to .dotfiles
-      export DOTHOME
+      packages+=("$1")
+      shift
       ;;
     esac
-  fi
-  attempt=$((attempt + 1))
-  sleep 2 # Add a small delay between attempts
-done
+  done
 
-# Check if script is being executed directly (not sourced)
-if [ "$0" = "$script_name" ] || [ "$0" = "./$script_name" ]; then
-  # If no arguments are provided, use default list of packages
-  if [ $# -eq 0 ]; then
-    # Source function definitions and package lists
-    . "$DOTHOME/script/functions.sh"
-    . "$DOTHOME/script/packages.list"
-    # In POSIX sh, we need to pass the packages as individual arguments
-    # Assuming packages.list defines a space-separated list of packages
-    check_and_install_packages $DEVLANG
-    check_and_install_packages $UTILITIES
-    check_and_install_packages $DEVTOOLS
+  # Force download if requested
+  if [[ "$force_download" == true ]] && [[ -d "$DFS_HOME" ]]; then
+    log_info "Force download requested, removing existing dotfiles"
+    rm -rf "$DFS_HOME"
+  fi
+
+  # Run setup based on how script was called
+  if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main_setup "${packages[@]}"
   else
-    # Use packages provided as arguments
-    check_and_install_packages "$@"
+    log_info "Script sourced, functions available for use"
   fi
+}
+
+# Execute main function if script is run directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
 fi
-
-source "$DOTHOME/script/symlink.sh"
-echo "Choose login shell 1)zsh 2)fish"
-read -r LOGINSHELL
-case "$LOGINSHELL" in
-1)
-  echo "set zsh as login shell"
-  chsh -s "$(which zsh)"
-  ;;
-2)
-  echo "set fish as login shell"
-  chsh -s "$(which fish)"
-  ;;
-*)
-  echo "none choosed will use zsh instead"
-  chsh -s "$(which zsh)"
-  ;;
-esac
-
-# termux
-source $DOTHOME/script/termux.sh

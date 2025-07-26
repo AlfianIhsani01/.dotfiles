@@ -26,12 +26,5 @@ export NODE_REPL_HISTORY="${XDG_DATA_HOME}/node_repl_history"
 
 # Sheldon
 export SHELDON_DATA_DIR="$XDG_DATA_HOME/sheldon"
-## Zsh
-# export ZDOTDIR=$HOME
-# export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-# export ZHOMEDIR=$HOME/.config/zsh
-# export ZDATADIR=$XDG_DATA_HOME/zsh
-# export ZCACHEDIR=$XDG_CACHE_HOME/zsh
-# source $ZDOTDIR/.zshrc
 
 # export HELIX_RUNTIME="/data/data/com.termux/files/home/.config/helix/runtime"

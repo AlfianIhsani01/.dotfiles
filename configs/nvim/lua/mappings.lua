@@ -1,12 +1,9 @@
 require "nvchad.mappings"
 
--- add yours here
-
 local map = vim.keymap.set
--- local dmap= vim.keymap.del
 
 map("n", ";", ":", { desc = "CMD enter command mode" })
-map("i", "ne", "<ESC>")
+map("i", "NE", "<ESC>", { noremap = false })
 
 -- reserved keys
 map("", "s", "<Nop>")
