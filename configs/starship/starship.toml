@@ -173,7 +173,7 @@ truncation_length = 4
 truncation_symbol = ''
 
 [git_status]
-disabled = false
+disabled = true
 style = "fg:info"
 stashed = "[☐${count}](bold fg:pink)"
 staged = "[✔${count}](fg:success)"

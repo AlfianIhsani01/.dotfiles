@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/data/data/com.termux/files/usr/bin/env bash
 extract() {
   if [ -f "$1" ]; then
     case "$1" in
@@ -50,9 +50,15 @@ mvg() {
 }
 
 function xdg_dirs() {
-  local xdg=("$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_RUNTIME_DIR" "$XDG_STATE_HOME" "$XDG_DATA_HOME")
+  local xdg=(
+	  "$XDG_CONFIG_HOME" \
+	  "$XDG_CACHE_HOME" \
+	  "$XDG_RUNTIME_DIR" \
+	  "$XDG_STATE_HOME" \
+	  "$XDG_DATA_HOME"
+  )
   for i in "${xdg[@]}"; do
-    echo "$i"
+    ## echo "$i"
     if [ ! -d "$i" ]; then
       mkdir -p "$i"
     fi

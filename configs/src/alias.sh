@@ -25,7 +25,7 @@ alias lr='eza -lRh'                # recursive ls
 alias lt='eza -ltrh'               # sort by date
 alias lm='eza -alh |more'          # pipe through 'more'
 alias lw='eza -xAh'                # wide listing format
-alias ll='eza -Fls'                # long listing format
+alias ll='eza -l -s size -F auto'                # long listing format
 alias labc='eza -lap'              # alphabetical sort
 alias lf='eza -lf | rg -v '^d''  # files only
 alias ldir='eza -l | rg '^d''   # directories only
@@ -37,6 +37,6 @@ alias lls='eza -l'                 # List
 alias g='git'
 
 # fzf
-alias fz-view='set selected $(fzf --preview "bat --number --color=always {}") && [ -n "$selected" ] && nvim "$selected"'
+alias fz-view='selected=$(fzf --preview "bat --number --color=always {}") && [ -n "$selected" ] && nvim "$selected"'
 alias fz-cd='cd "$(fzf --preview="if [ -d '{}'];then ls -a '{}';else bat '{}' ; fi" | xargs -r -l {}; then Is -a dirname "{}" )"'
 
