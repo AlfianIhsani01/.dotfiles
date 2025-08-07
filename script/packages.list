@@ -1,20 +1,13 @@
 # Packages list
-DEVLANG="
-  clangd
-  rust
-  lua-language-server
-  luarocks
-  shfmt
-  shellcheck
+DEPENDENCIES="
+  stow
 "
 UTILITIES="
   fd
-  zsh
   bat
   openssh
   eza
   ripgrep
-  fish
   zoxide
   atuin
   tealdeer

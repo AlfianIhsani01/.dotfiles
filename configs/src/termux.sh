@@ -5,13 +5,13 @@ alias R='termux-reload-settings'
 
 
 termux-change-font() {
-  local linkf="$PWD/$1"
-  local linkd="$HOME/.termux"
-  if [ -d "$linkd" ] && [ -f "$linkf" ];then
-    ln -v -sf "$linkf" "$linkd/font.ttf"
-    file "$linkd/font.ttf"
+  local font="${/storage/emulated/0/Fonts/:-PWD}/$1"
+  local target_dir="$HOME/.termux"
+  if [ -d "$target_dir" ] && [ -f "$font" ];then
+    ln -v -sf "$font" "$target_dir/font.ttf"
+    # file "$target_dir/font.ttf"
     termux-reload-settings
   else
-    echo "$linkf or $linkd does\`t exist"
+    echo "$font or $target_dir does\`t exist"
   fi
 }

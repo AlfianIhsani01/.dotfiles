@@ -1,50 +1,63 @@
 #!/data/data/com.termux/files/usr/bin/env bash
 
 # Color codes
-declare -r RED='\[\033[0;31m\]'
-declare -r GREEN='\[\033[0;32m\]'
-declare -r YELLOW='\[\033[0;33m\]'
-declare -r BLUE='\[\033[0;34m\]'
-declare -r PURPLE='\[\033[0;35m\]'
-declare -r CYAN='\[\033[0;36m\]'
-declare -r WHITE='\[\033[0;37m\]'
-declare -r RESET='\[\033[0m\]'
-declare -r BOLD='\[\033[1m\]'
+declare -Ia COLOR
+COLOR[0]='\[\033[0;31m\]' # red
+COLOR[1]='\[\033[0;32m\]' # green
+COLOR[2]='\[\033[0;33m\]' # yellow
+COLOR[3]='\[\033[0;34m\]' # blue
+COLOR[4]='\[\033[6;35m\]' # purple
+COLOR[5]='\[\033[0;36m\]' # cyan
+COLOR[6]='\[\033[0;38m\]' # white
+COLOR[7]='\[\033[0m\]'    # reset
+COLOR[8]='\[\033[1m\]'    # bold
 
-# fill() {
-#   local TERM_COLUMN=$(stty size | awk '{print $NF}')
-#   for ((i = 0; i < "$TERM_COLUMN"; i++)); do
-#     printf "₋"
-#   done
-# }
+function git_status {
+  local status bits=""
 
-main_prompt() {
-  # local exit_code=$?
-  if [ $? -eq 0 ]; then
-    local STATUS_COLOR=$GREEN
-  else
-    local STATUS_COLOR=$RED
-  fi
+  # Use porcelain format - faster and more reliable than parsing human output
+  status=$(git status --porcelain=v1 --branch 2>/dev/null) || return
 
-  # Choose color based on exit status
-  local USER=$(if [[ $(id -un) != "root" ]]; then
-    echo "akal"
-  fi)
-  local BRANCH=$(git branch --show-current 2>/dev/null)
-  local IC=$(if [[ ! $BRANCH ]]; then
-    echo "${PURPLE}${BOLD}‒${RESET}"
-  else
-    echo "${CYAN}‒${WHITE}${BRANCH}${CYAN}‒"
-  fi)
-  # Build the prompt
-  PS1="\
-${YELLOW}▌${USER}${RESET} ›${BLUE}\h${RESET}:\
-${GREEN}\w${RESET}
-${IC}${STATUS_COLOR}❯${RESET} "
+  # Single pass through status checking for patterns
+  while IFS= read -r line; do
+    case $line in
+    "## "*" [ahead "*) [[ $bits != *"*"* ]] && bits="*${bits}" ;;
+    [MARC]" "*) [[ $bits != *">"* ]] && bits=">${bits}" ;;          # renamed/moved
+    *[M]* | *" M") [[ $bits != *"!"* ]] && bits="!${bits}" ;;       # modified
+    [AD]" "* | *" "[AD]) [[ $bits != *"x"* ]] && bits="x${bits}" ;; # deleted
+    "A "* | " A"*) [[ $bits != *"+"* ]] && bits="+${bits}" ;;       # added
+    "??"*) [[ $bits != *"?"* ]] && bits="?${bits}" ;;               # untracked
+    esac
+  done <<<"$status"
+
+  [[ -n $bits ]] && echo " ${bits}"
 }
 
-# Set the prompt command to run our function before each prompt
-PROMPT_COMMAND=main_prompt
+function main_prompt() {
 
-# Alternative minimal version (uncomment to use instead):
-# PROMPT_COMMAND='PS1="\[\033[0;$((31+!$?))m\]\u@\h:\w\$ \[\033[0m\]"'
+  local exit_code=$?
+  local s=5
+  if [ $exit_code -ne 0 ]; then
+    s=$((s - 5))
+  fi
+
+  local USER
+  local u=3
+  USER=$([ "$(id -un)" != "root" ] && echo "akal")
+  if [ "$USER" == "root" ]; then
+    u=$((u - 3))
+  fi
+  # local JOBS;
+  # JOBS=$([ "$(jobs)" != "" ] && echo "\j")
+
+  local BRANCH
+  BRANCH=$(git branch --show-current 2>/dev/null | sed 's/^/▌/;s/$/ /')
+
+  PS1="\
+${COLOR[u]}▌${USER}${COLOR[7]} › \
+${COLOR[2]}\w
+${COLOR[4]}${BRANCH}${COLOR[s]}❯ "
+}
+# ${COLOR[0]}$(parse_git_branch "${BRANCH}")
+
+PROMPT_COMMAND=main_prompt
