@@ -1,16 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env bash
-
+export PROMPT_DIRTRIM=3
 # Color codes
-declare -Ia COLOR
-COLOR[0]='\[\033[0;31m\]' # red
-COLOR[1]='\[\033[0;32m\]' # green
-COLOR[2]='\[\033[0;33m\]' # yellow
-COLOR[3]='\[\033[0;34m\]' # blue
-COLOR[4]='\[\033[6;35m\]' # purple
-COLOR[5]='\[\033[0;36m\]' # cyan
-COLOR[6]='\[\033[0;38m\]' # white
-COLOR[7]='\[\033[0m\]'    # reset
-COLOR[8]='\[\033[1m\]'    # bold
+declare -rA COLOR=(
+[0]='\[\033[0;31m\]' # red
+[1]='\[\033[0;32m\]' # green
+[2]='\[\033[0;33m\]' # yellow
+[3]='\[\033[0;34m\]' # blue
+[4]='\[\033[6;35m\]' # purple
+[5]='\[\033[0;36m\]' # cyan
+[6]='\[\033[0;38m\]' # white
+[7]='\[\033[0m\]'    # reset
+[8]='\[\033[1m\]'    # bold
+)
 
 function git_status {
   local status bits=""
@@ -43,7 +44,7 @@ function main_prompt() {
 
   local USER
   local u=3
-  USER=$([ "$(id -un)" != "root" ] && echo "akal")
+  USER=$("$(id -un)" != "root" && echo "akal")
   if [ "$USER" == "root" ]; then
     u=$((u - 3))
   fi
@@ -58,6 +59,5 @@ ${COLOR[u]}▌${USER}${COLOR[7]} › \
 ${COLOR[2]}\w
 ${COLOR[4]}${BRANCH}${COLOR[s]}❯ "
 }
-# ${COLOR[0]}$(parse_git_branch "${BRANCH}")
 
 PROMPT_COMMAND=main_prompt

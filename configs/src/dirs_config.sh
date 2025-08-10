@@ -7,9 +7,8 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_RUNTIME_DIR="$PREFIX/usr/tmp/runtime-$UID"
 
-## General
 export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share}/cargo/bin"
-export HISTFILE=~/.history
+export DFS_HOME="${HOME}/.dotfiles"
 
 ## Nodejs
 export NPM_CONFIG_USERCONFIG="${XDG_CONFIG_HOME}/npm/npmrc"
@@ -17,7 +16,7 @@ export NPM_CONFIG_CACHE="${XDG_CACHE_HOME}/npm"
 # export NPM_CONFIG_TMP="${XDG_RUNTIME_DIR}/npm"
 export NODE_REPL_HISTORY="${XDG_DATA_HOME}/node_repl_history"
 
-## Spesified config
+## other 
 export SSH_CONFIG_DIR="${XDG_CONFIG_HOME}/ssh"
 export GIT_CONFIG_GLOBAL="${XDG_CONFIG_HOME:-$HOME/.config}/git/config"
 export STARSHIP_CONFIG="${XDG_CONFIG_HOME}/starship/starship.toml"

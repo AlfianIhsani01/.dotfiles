@@ -10,18 +10,9 @@ set -euo pipefail
 
 # Configuration
 declare -r DFS_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
-declare -r DFS_HOME="${HOME:-$XDG_CONFIG_HOME}/.dotfiles"
+declare -r DFS_HOME="${HOME/.dotfiles:-$XDG_CONFIG_HOME/dotfiles}"
 declare -r SCRIPT_NAME="${0##*/}"
 declare -r MAX_ATTEMPTS=2
-
-# Colors for output
-declare -r RED='\033[0;31m'
-declare -r GREEN='\033[0;32m'
-declare -r YELLOW='\033[0;33m'
-declare -r BLUE='\033[0;34m'
-declare -r CYAN='\033[0;36m'
-declare -r BOLD='\033[1m'
-declare -r NC='\033[0m'
 
 # Shell options with full paths
 declare -rA SHELL_OPTIONS=(
@@ -33,27 +24,6 @@ declare -rA SHELL_NAMES=(
   [1]="fish"
   [2]="bash"
 )
-
-# --- Logging functions ---
-log_info() {
-  printf "${BLUE}[INFO]${NC} %s\n" "$*"
-}
-
-log_success() {
-  printf "${GREEN}[SUCCESS]${NC} %s\n" "$*"
-}
-
-log_warning() {
-  printf "${YELLOW}[WARNING]${NC} %s\n" "$*"
-}
-
-log_error() {
-  printf "${RED}[ERROR]${NC} %s\n" "$*" >&2
-}
-
-log_step() {
-  printf "\n${BOLD}${CYAN}=== %s ===${NC}\n" "$*"
-}
 
 # --- Utility functions ---
 prompt_yes_no() {
