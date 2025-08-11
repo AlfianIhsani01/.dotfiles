@@ -14,8 +14,8 @@ alias v='$EDITOR'
 alias vi='$EDITOR'
 
 # Alias's for multiple directory listing commands
-alias ls='eza --color=always --icons' # add colors and file type extensions
-alias l='eza -ah -F auto'
+[[ eza ]] && alias ls='eza --color=always --icons' # add colors and file type extensions
+alias l='ls -ah -F auto'
 alias la='ls -Alh'               # show hidden files
 alias lx='ls -lXBh'              # sort by extension
 alias lk='ls -lSrh'              # sort by size
@@ -38,4 +38,4 @@ alias g='git'
 
 # fzf
 alias fzvi='selected=$(FZF_DEFAULT_COMMAND="fd --follow -tf" && fzf --preview "bat --style=plain --color=always {}") && [ -n "$selected" ] && "$EDITOR" "$selected"'
-alias fzcd='cd "$(FZF_DEFAULT_COMMAND="$FZF_DEFAULT_COMMAND -td --hidden" && fzf --preview="if [ -d {} ]; then eza --icons --color=always -A {}; else bat {}; fi" | xargs -r -I {} echo {})"'
+alias fzcd='cd "$(FZF_DEFAULT_COMMAND="fd -td --hidden" && fzf --preview="if [ -d {} ]; then eza --icons --color=always -A {}; else bat {}; fi" | xargs -r -I {} echo {})"'

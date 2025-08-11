@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env bash
+#!/bin/env bash
 extract() {
   if [ -f "$1" ]; then
     case "$1" in

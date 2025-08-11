@@ -1,9 +1,9 @@
-#!/data/data/com.termux/files/usr/bin/env bash
+#!/bin/env bash
 
 # General
-export LC_CTYPE="C.UTF-8"
-export LC_ALL="${LC_ALL:-C.UTF-8}"
-export VISUAL="termux-open"
+# export LC_CTYPE="C.UTF-8"
+# export LC_ALL="${LC_ALL:-C.UTF-8}"
+# export VISUAL="termux-open"
 export EDITOR="nvim"
 
 # History

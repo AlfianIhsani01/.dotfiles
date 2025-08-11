@@ -9,22 +9,29 @@
 set -euo pipefail
 
 # Configuration
-declare -r DFS_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
-declare -r DFS_HOME="${HOME/.dotfiles:-$XDG_CONFIG_HOME/dotfiles}"
+declare -r DF_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
+declare -r DF_HOME="${HOME}/.dotfiles"
 declare -r SCRIPT_NAME="${0##*/}"
 declare -r MAX_ATTEMPTS=2
 
 # Shell options with full paths
 declare -rA SHELL_OPTIONS=(
-  [1]="/usr/bin/fish"
-  [2]="/bin/bash"
+  [1]="/bin/bash"
+  [2]="/usr/bin/fish"
+  [3]="/usr/bin/zsh"
 )
 
 declare -rA SHELL_NAMES=(
-  [1]="fish"
-  [2]="bash"
+  [1]="bash"
+  [2]="fish"
+  [3]="zsh"
 )
-
+# source_script() {
+#   source "$DF_HOME/script/main.sh"
+#   source "$DF_HOME/script/stow.sh"
+#   source "$DF_HOME/script/termux.sh"
+#
+# }
 # --- Utility functions ---
 prompt_yes_no() {
   local prompt="$1"
@@ -46,9 +53,9 @@ prompt_yes_no() {
 
 # --- Check if dotfiles exist and are valid ---
 validate_dotfiles() {
-  [[ -d "$DFS_HOME" ]] || return 1
-  [[ -f "$DFS_HOME/$SCRIPT_NAME" ]] || return 1
-  [[ -d "$DFS_HOME/.git" ]] || return 1
+  [[ -d "$DF_HOME" ]] || return 1
+  [[ -f "$DF_HOME/$SCRIPT_NAME" ]] || return 1
+  [[ -d "$DF_HOME/.git" ]] || return 1
   return 0
 }
 
@@ -56,14 +63,14 @@ validate_dotfiles() {
 download_dotfiles() {
   local attempt=1
 
-  log_step "Downloading Dotfiles"
+  # log_step "Checking Dotfiles"
 
   while ((attempt <= MAX_ATTEMPTS)); do
-    log_info "Checking for dotfiles at $DFS_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
+    log_info "Checking for dotfiles at $DF_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
 
     if validate_dotfiles; then
-      log_success "Dotfiles found and validated at $DFS_HOME"
-      export DFS_HOME
+      log_success "Dotfiles found and validated at $DF_HOME"
+      export DF_HOME
       return 0
     fi
 
@@ -93,14 +100,14 @@ download_dotfiles() {
       fi
 
       log_info "Cloning dotfiles repository..."
-      if [[ -d "$DFS_HOME" ]]; then
+      if [[ -d "$DF_HOME" ]]; then
         log_warning "Removing existing incomplete dotfiles directory"
-        rm -rf "$DFS_HOME"
+        rm -rf "$DF_HOME"
       fi
 
-      if git clone --depth 1 "$DFS_URL" "$DFS_HOME"; then
+      if git clone --depth 1 "$DF_URL" "$DF_HOME"; then
         log_success "Dotfiles cloned successfully"
-        export DFS_HOME
+        export DF_HOME
       else
         log_error "Failed to clone dotfiles repository"
         ((attempt++))
@@ -123,13 +130,13 @@ source_dotfiles_script() {
   local script_path="$1"
   local script_name="${script_path##*/}"
 
-  if [[ -f "$DFS_HOME/$script_path" ]]; then
+  if [[ -f "$DF_HOME/$script_path" ]]; then
     log_info "Sourcing $script_name..."
     # shellcheck source=/dev/null
-    source "$DFS_HOME/$script_path"
+    source "$DF_HOME/$script_path"
     return 0
   else
-    log_warning "$script_name not found at $DFS_HOME/$script_path"
+    log_warning "$script_name not found at $DF_HOME/$script_path"
     return 1
   fi
 }
@@ -137,11 +144,6 @@ source_dotfiles_script() {
 # --- Install packages from dotfiles configuration ---
 install_packages() {
   log_step "Installing Packages"
-
-  # Source function definitions
-  if ! source_dotfiles_script "script/functions.sh"; then
-    log_warning "Functions script not found, using fallback methods"
-  fi
 
   # Source package lists
   if source_dotfiles_script "script/packages.list"; then
@@ -180,7 +182,7 @@ install_packages() {
 deploy_dotfiles() {
   log_step "Deploying Dotfiles"
 
-  if source_dotfiles_script "script/symlink.sh"; then
+  if source_dotfiles_script "script/stow.sh"; then
     if command -v deploy &>/dev/null; then
       log_info "Deploying dotfiles with stow..."
       deploy
@@ -189,7 +191,7 @@ deploy_dotfiles() {
       log_warning "Deploy function not found in symlink.sh"
     fi
   else
-    log_warning "Symlink script not found, skipping dotfile deployment"
+    log_warning "stow script not found, skipping dotfile deployment"
   fi
 }
 
@@ -326,13 +328,19 @@ ${BOLD}EXAMPLES:${NC}
     $SCRIPT_NAME --no-packages      # Setup without installing packages
 
 ${BOLD}REPOSITORY:${NC}
-    $DFS_URL
+    $DF_URL
 
 EOF
 }
 
 # --- Main execution ---
 main() {
+  # source_script 
+  # Source function definitions
+  if ! source_dotfiles_script "script/main.sh"; then
+    log_warning "main script not found, using fallback methods"
+  fi
+
   local skip_packages=false
   local skip_shell=false
   local force_download=false
@@ -375,9 +383,9 @@ main() {
   done
 
   # Force download if requested
-  if [[ "$force_download" == true ]] && [[ -d "$DFS_HOME" ]]; then
+  if [[ "$force_download" == true ]] && [[ -d "$DF_HOME" ]]; then
     log_info "Force download requested, removing existing dotfiles"
-    rm -rf "$DFS_HOME"
+    rm -rf "$DF_HOME"
   fi
 
   # Run setup based on how script was called
@@ -392,3 +400,4 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   main "$@"
 fi
+unset SCRIPT_NAME

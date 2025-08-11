@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env bash
+#!/bin/env bash
 export PROMPT_DIRTRIM=3
 # Color codes
 declare -rA COLOR=(
@@ -42,12 +42,16 @@ function main_prompt() {
     s=$((s - 5))
   fi
 
-  local USER
+  local USER=$(id -un)
   local u=3
-  USER=$("$(id -un)" != "root" && echo "akal")
-  if [ "$USER" == "root" ]; then
-    u=$((u - 3))
-  fi
+  USER=$(if [[ $USER == u0_* ]]; then
+           echo "akal"
+         elif [[ $USER == root ]]; then
+           echo "$USER"
+           u=$((u - 3))
+         else
+           echo "$USER"
+         fi)
   # local JOBS;
   # JOBS=$([ "$(jobs)" != "" ] && echo "\j")
 
@@ -55,9 +59,9 @@ function main_prompt() {
   BRANCH=$(git branch --show-current 2>/dev/null | sed 's/^/▌/;s/$/ /')
 
   PS1="\
-${COLOR[u]}▌${USER}${COLOR[7]} › \
+${COLOR[$u]}▌${USER}${COLOR[7]} › \
 ${COLOR[2]}\w
-${COLOR[4]}${BRANCH}${COLOR[s]}❯ "
+${COLOR[4]}${BRANCH}${COLOR[$s]}❯ ${COLOR[7]}" 
 }
 
 PROMPT_COMMAND=main_prompt
