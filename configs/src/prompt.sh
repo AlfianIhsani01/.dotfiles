@@ -44,7 +44,7 @@ function main_prompt() {
 
   local USER
   local u=3
-  USER=$("$(id -un)" != "root" && echo "akal")
+  USER=$([ "$(id -un)" != "root" ] && echo "akal")
   if [ "$USER" == "root" ]; then
     u=$((u - 3))
   fi
@@ -55,9 +55,9 @@ function main_prompt() {
   BRANCH=$(git branch --show-current 2>/dev/null | sed 's/^/▌/;s/$/ /')
 
   PS1="\
-${COLOR[u]}▌${USER}${COLOR[7]} › \
+${COLOR[$u]}▌${USER}${COLOR[7]} › \
 ${COLOR[2]}\w
-${COLOR[4]}${BRANCH}${COLOR[s]}❯ "
+${COLOR[4]}${BRANCH}${COLOR[$s]}❯ "
 }
 
 PROMPT_COMMAND=main_prompt
