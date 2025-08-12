@@ -42,7 +42,8 @@ function main_prompt() {
     s=$((s - 5))
   fi
 
-  local USER=$(id -un)
+  local USER
+  USER=$(id -un)
   local u=3
   USER=$(if [[ $USER == u0_* ]]; then
            echo "akal"
