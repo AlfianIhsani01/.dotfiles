@@ -1,3 +1,4 @@
+#/usr/bin/env git
 [color]
   branch = auto
   diff = auto
@@ -10,8 +11,14 @@
   remote = yellow
 
 [core]
-  pager = less -FRSX
+  pager = "sed 's/*/○/;s/\\\\/╲/g;s/\\//╱/g;s/|/│/g'| bat -p --wrap=never"
   editor = nvim
+
+[interactive]
+    diffFilter = bat -d
+
+[merge]
+    conflictStyle = zdiff3
 
 [alias]
   co = checkout
@@ -29,12 +36,12 @@
   ba = branch -a
   bm = branch --merged
   bn = branch --no-merged
-  df = "!git hist | peco | awk '{print $2}' | xargs -I {} git diff {}^ {}"
+  df = "!git hist | sed 's/*/○/g'| fzf | awk '{print $2}' | xargs -I {} git diff {}^ {}"
   stat = !git --no-pager diff --stat
   open = "!hub browse"
   type = cat-file -t
   dump = cat-file -p
-  find = "!f() { git log --pretty=format:\"%h %cd [%cn] %s%d\" --date=relative -S'pretty' -S\"$@\" | peco | awk '{print $1}' | xargs -I {} git diff {}^ {}; }; f"
+  find = "!f() { git log --pretty=format:\"%h %cd [%cn] %s%d\" --date=relative -S'pretty' -S\"$@\" | fzf | awk '{print $1}' | xargs -I {} git diff {}^ {}; }; f"
 
   # edit conflicted file on merge
   edit-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; vim `f`"
@@ -86,6 +93,6 @@
 
 [user]
 	email = ihsani.akmal.0@gmail.com
-	name = Alfian Ihsani Akmal
+	name = Akal
 [safe]
 	directory = /storage/emulated/0/Projects/CustomFont
