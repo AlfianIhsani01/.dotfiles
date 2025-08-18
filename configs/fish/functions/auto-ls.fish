@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env fish
+#!/usr/bin/env fish
 # Prevent loading on dumb terminals
 if test "$TERM" = "dumb"
     echo "Dumb/non-tty terminal detected, skipping loading fish-ls"

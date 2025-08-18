@@ -38,7 +38,7 @@ bleopt editor=nvim
 
 bleopt vbell_default_message=' Wuff, -- Wuff!! '
 bleopt vbell_duration=2000
-bleopt vbell_align=left
+bleopt vbell_align=right
 ble-face vbell='reverse'
 ble-face vbell_erase='bg=252'
 ble-face vbell_flash='fg=green,reverse'
@@ -108,14 +108,14 @@ bleopt indent_offset=2
 ## the value `graphical` is specified, the graphical line is used, i.e., the
 ## beginning and the end of the displayed line in the terminal is used.
 
-bleopt edit_line_type=graphical
+bleopt edit_line_type=logical
 
 
 ## The following option specifies the set of expansions performed by
 ## magic-space with a colon-separated list of expansion types. "history",
 ## "sabbrev", "alias", and "autocd" can be specified.
 
-bleopt edit_magic_expand=history:sabbrev
+bleopt edit_magic_expand=sabbrev:history
 
 
 ## This option configures the detailed behavior of the widget "magic-space"
@@ -123,7 +123,7 @@ bleopt edit_magic_expand=history:sabbrev
 ## specified, the insertion of "SP" is skipped when the inline sabbrev is
 ## performed by "magic-space".
 
-#bleopt edit_magic_opts=
+# bleopt edit_magic_opts=
 
 
 ## This option specifies the expansions performed on accept-line by a
@@ -201,8 +201,8 @@ bleopt prompt_rps1_transient=same-dir
 ## default graphic style of the status line.
 
 # bleopt prompt_status_line=''
-bleopt prompt_status_align=right
-ble-face prompt_status_line='fg=231,bg=240'
+# bleopt prompt_status_align=right
+# ble-face prompt_status_line='fg=231,bg=240'
 
 
 ## "prompt_eol_mark" specifies the contents of the mark used to indicate the
@@ -220,8 +220,8 @@ bleopt prompt_eol_mark=$'\e[94m↲EOF\e[m'
 ## command and the prompt.  When the other values are specified, the value is
 ## interpreted as an ANSI sequences, and the result is repeated to fill a line.
 
-#bleopt prompt_ruler=            # no ruler (default)
-#bleopt prompt_ruler=empty-line  # empty line
+# bleopt prompt_ruler=            # no ruler (default)
+# bleopt prompt_ruler=empty-line  # empty line
 bleopt prompt_ruler=$'\e[90m·'  # blue line
 
 
@@ -235,7 +235,7 @@ bleopt prompt_ruler=$'\e[90m·'  # blue line
 ## treatment.
 
 #bleopt prompt_command_changes_layout=   # PRECMD/PROMPT_COMMAND not output
-#bleopt prompt_command_changes_layout=1  # PRECMD/PROMPT_COMMAND may output
+bleopt prompt_command_changes_layout=1  # PRECMD/PROMPT_COMMAND may output
 
 
 ## "exec_restore_pipestatus" controls whether ble.sh restores PIPESTATUS of the
@@ -373,14 +373,14 @@ bleopt history_erasedups_limit=1000   # last 1000 items
 ## equal to `bleopt line_limit_length`.  Otherwise, the text editor may be
 ## unexpectedly executed in navigating through the history.
 
-#bleopt line_limit_type=none
+bleopt line_limit_type=none
 
 
 ## The following option specifies the capacity of the command line in the
 ## number of characters.  The number 0 or negative numbers means the unlimited
 ## capacity.
 
-#bleopt line_limit_length=10000
+bleopt line_limit_length=10000
 
 
 ## The following option specifies the maximal number of characters which can be
@@ -409,7 +409,7 @@ bleopt history_limit_length=10000
 ## The cursor type is specified by the argument of the control function
 ## DECSCUSR.
 
-bleopt term_cursor_external=0
+bleopt term_cursor_external=
 
 
 ## The following settings, external and internal, specify the "modifyOtherKeys"
@@ -599,13 +599,13 @@ bleopt complete_menu_filter=1
 ## If "complete_ambiguous" has non-empty values, ambiguous completion
 ## candidates are generated for completion.
 
-# bleopt complete_ambiguous=1
+bleopt complete_ambiguous=1
 
 
 ## If "complete_contract_function_names" has non-empty values, the function
 ## name candidates are grouped by prefixes of the directory-like form "*/".
 
-#bleopt complete_contract_function_names=1
+bleopt complete_contract_function_names=1
 
 
 ## By default, ble.sh does not allow rewriting the existing text if non-unique
@@ -734,7 +734,7 @@ bleopt complete_timeout_compvar=2000
 ## each. "desc-text" is different from "desc" in the behavior that it does not
 ## interprets ANSI escape sequences in the descriptions.
 
-bleopt complete_menu_style=dense
+bleopt complete_menu_style=dense-nowrap
 
 
 ## When a non-empty value is specified to this setting, the matching text on
@@ -751,7 +751,7 @@ bleopt complete_skip_matched=1
 ## and additionally, the completion menu is hidden by default.  The default is
 ## "insert-selection".
 
-bleopt complete_menu_complete_opts=insert-selection
+bleopt complete_menu_complete_opts=hidden
 
 
 ## When a non-empty value is specified to this setting, the highlighting of the
@@ -794,7 +794,7 @@ bleopt complete_menu_maxlines=5
 # bleopt menu_align_prefix='\e[1m%d:\e[m '
 #bleopt menu_desc_prefix='\e[1m%d.\e[m '
 #bleopt menu_linewise_prefix='\e[1;36m%d:\e[m '
-bleopt menu_dense_prefix='\e[37m%d╱\e[m'
+bleopt menu_dense_prefix='\e[37m╱\e[m'
 
 
 ## The following setting specifies the minimum column width for the multicolumn
@@ -939,7 +939,7 @@ bleopt filename_ls_colors="$LS_COLORS"
 ## user-input checking.
 
 bleopt highlight_timeout_sync=5000
-bleopt highlight_timeout_async=50
+bleopt highlight_timeout_async=500
 bleopt syntax_eval_polling_interval=200
 
 
@@ -960,70 +960,70 @@ bleopt color_scheme=base16
 ## The following settings specify graphic styles of corresponding faces.  Faces
 ## used for specific features are described in the respective sections.
 
-#ble-face -s region                    fg=231,bg=60
+ble-face -s region                    fg=231,bg=60
 ble-face -s region_insert             fg=7,bg=236
-#ble-face -s region_match              fg=231,bg=55
-#ble-face -s region_target             fg=black,bg=153
-#ble-face -s disabled                  fg=242
-#ble-face -s overwrite_mode            fg=black,bg=51
+ble-face -s region_match              fg=231,bg=55
+ble-face -s region_target             fg=black,bg=153
+ble-face -s disabled                  fg=242
+ble-face -s overwrite_mode            fg=black,bg=51
 
-#ble-face -s syntax_default            none
-#ble-face -s syntax_command            fg=brown
-#ble-face -s syntax_quoted             fg=green
-#ble-face -s syntax_quotation          fg=green,bold
-#ble-face -s syntax_escape             fg=magenta
-#ble-face -s syntax_expr               fg=63
-#ble-face -s syntax_error              bg=203,fg=231
-#ble-face -s syntax_varname            fg=202
-#ble-face -s syntax_delimiter          bold
-#ble-face -s syntax_param_expansion    fg=133
-#ble-face -s syntax_history_expansion  bg=94,fg=231
-#ble-face -s syntax_function_name      fg=99,bold
-#ble-face -s syntax_comment            fg=gray
-#ble-face -s syntax_glob               fg=198,bold
-#ble-face -s syntax_brace              fg=37,bold
-#ble-face -s syntax_tilde              fg=63,bold
-#ble-face -s syntax_document           fg=100
-#ble-face -s syntax_document_begin     fg=100,bold
-#ble-face -s command_builtin_dot       fg=red,bold
-#ble-face -s command_builtin           fg=red
-#ble-face -s command_alias             fg=teal
-#ble-face -s command_function          fg=99 # fg=133
-#ble-face -s command_file              fg=green
-#ble-face -s command_keyword           fg=blue
-#ble-face -s command_jobs              fg=red,bold
-#ble-face -s command_directory         fg=63,underline
-#ble-face -s command_suffix            fg=231,bg=28
-#ble-face -s command_suffix_new        fg=231,bg=124
-#ble-face -s argument_option           fg=teal
-#ble-face -s argument_option           fg=black,bg=225
-#ble-face -s filename_directory        underline,fg=33
-#ble-face -s filename_directory_sticky underline,fg=231,bg=26
-#ble-face -s filename_link             underline,fg=teal
-#ble-face -s filename_orphan           underline,fg=16,bg=224
-#ble-face -s filename_setuid           underline,fg=black,bg=220
-#ble-face -s filename_setgid           underline,fg=black,bg=191
-#ble-face -s filename_executable       underline,fg=green
-#ble-face -s filename_other            underline
-#ble-face -s filename_socket           underline,fg=cyan,bg=black
-#ble-face -s filename_pipe             underline,fg=lime,bg=black
-#ble-face -s filename_character        underline,fg=231,bg=black
-#ble-face -s filename_block            underline,fg=yellow,bg=black
-#ble-face -s filename_warning          underline,fg=red
-#ble-face -s filename_url              underline,fg=blue
-#ble-face -s filename_ls_colors        underline
-#ble-face -s varname_array             fg=orange,bold
-#ble-face -s varname_empty             fg=31
-#ble-face -s varname_export            fg=200,bold
-#ble-face -s varname_expr              fg=99,bold
-#ble-face -s varname_hash              fg=70,bold
-#ble-face -s varname_new               fg=34
-#ble-face -s varname_number            fg=64
-#ble-face -s varname_readonly          fg=200
-#ble-face -s varname_transform         fg=29,bold
-#ble-face -s varname_unset             fg=245
+ble-face -s syntax_default            none
+ble-face -s syntax_command            fg=brown
+ble-face -s syntax_quoted             fg=green
+ble-face -s syntax_quotation          fg=green,bold
+ble-face -s syntax_escape             fg=magenta
+ble-face -s syntax_expr               fg=63
+ble-face -s syntax_error              bg=203,fg=231
+ble-face -s syntax_varname            fg=202
+ble-face -s syntax_delimiter          bold
+ble-face -s syntax_param_expansion    fg=133
+ble-face -s syntax_history_expansion  bg=94,fg=231
+ble-face -s syntax_function_name      fg=99,bold
+ble-face -s syntax_comment            fg=gray
+ble-face -s syntax_glob               fg=198,bold
+ble-face -s syntax_brace              fg=37,bold
+ble-face -s syntax_tilde              fg=63,bold
+ble-face -s syntax_document           fg=100
+ble-face -s syntax_document_begin     fg=100,bold
+ble-face -s command_builtin_dot       fg=red,bold
+ble-face -s command_builtin           fg=red
+ble-face -s command_alias             fg=teal
+ble-face -s command_function          fg=99 # fg=133
+ble-face -s command_file              fg=green
+ble-face -s command_keyword           fg=blue
+ble-face -s command_jobs              fg=red,bold
+ble-face -s command_directory         fg=63,underline
+ble-face -s command_suffix            fg=231,bg=28
+ble-face -s command_suffix_new        fg=231,bg=124
+ble-face -s argument_option           fg=teal
+ble-face -s argument_option           fg=black,bg=225
+ble-face -s filename_directory        underline,fg=33
+ble-face -s filename_directory_sticky underline,fg=231,bg=26
+ble-face -s filename_link             underline,fg=teal
+ble-face -s filename_orphan           underline,fg=16,bg=224
+ble-face -s filename_setuid           underline,fg=black,bg=220
+ble-face -s filename_setgid           underline,fg=black,bg=191
+ble-face -s filename_executable       underline,fg=green
+ble-face -s filename_other            underline
+ble-face -s filename_socket           underline,fg=cyan,bg=black
+ble-face -s filename_pipe             underline,fg=lime,bg=black
+ble-face -s filename_character        underline,fg=231,bg=black
+ble-face -s filename_block            underline,fg=yellow,bg=black
+ble-face -s filename_warning          underline,fg=red
+ble-face -s filename_url              underline,fg=blue
+ble-face -s filename_ls_colors        underline
+ble-face -s varname_array             fg=orange,bold
+ble-face -s varname_empty             fg=31
+ble-face -s varname_export            fg=200,bold
+ble-face -s varname_expr              fg=99,bold
+ble-face -s varname_hash              fg=70,bold
+ble-face -s varname_new               fg=34
+ble-face -s varname_number            fg=64
+ble-face -s varname_readonly          fg=200
+ble-face -s varname_transform         fg=29,bold
+ble-face -s varname_unset             fg=245
 
-#ble-face -s cmdinfo_cd_cdpath         fg=26,bg=155
+ble-face -s cmdinfo_cd_cdpath         fg=26,bg=155
 
 ##-----------------------------------------------------------------------------
 ## Keybindings

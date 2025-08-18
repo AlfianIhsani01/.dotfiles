@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env fish
+#!/usr/bin/env fish
 dirs_config       # Keep this function at top level
 if status --is-interactive
   # Commands to run in interactive sessions can go here
