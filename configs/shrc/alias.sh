@@ -36,6 +36,3 @@ alias lls='ls -l'                # List
 # git
 alias g='git'
 
-# fzf
-alias fzvi='selected;selected=$(FZF_DEFAULT_COMMAND="fd --follow -tf" && fzf --preview "bat --style=plain --color=always {}"); [ -n "${selected}" ] && "${EDITOR}" "${selected}"'
-alias fzcd='cd "$(FZF_DEFAULT_COMMAND="fd -td --hidden" && fzf --preview="if [ -d {} ]; then ls --color=always -A {}; else bat {}; fi" | xargs -r -I {} echo {})"'

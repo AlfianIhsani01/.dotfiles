@@ -7,9 +7,9 @@ alias R='termux-reload-settings'
 #
 #
 termux-change-font() {
-  local font="${/storage/emulated/0/Fonts/:-PWD}/$1"
+  local font="/storage/emulated/0/Fonts/$1"
   local target_dir="$HOME/.termux"
-  if [ -d "$target_dir" ] && [ -f "$font" ];then
+  if [ -d "$target_dir" ] && [ -f "$font" ]; then
     ln -v -sf "$font" "$target_dir/font.ttf"
     # file "$target_dir/font.ttf"
     termux-reload-settings
@@ -32,13 +32,13 @@ termux-change-color() {
     # echo "${iterm2_repo_url}"
     curl -fLO "${iterm2_repo_url}" --output-dir ~/.termux
 
-    if [ -f ~/.termux/"${colors_prop_name}" ] && [ "$(cat ~/.termux/"${colors_prop_name}")" != "" ];then
-
+    if [ -f ~/.termux/"${colors_prop_name}" ] && [ "$(cat ~/.termux/"${colors_prop_name}")" != "" ]; then
       ln -sf ~/.termux/"${colors_prop_name}" ~/.termux/colors.properties
     else
       echo "failed to download the color-scheme"
+      return 1
     fi
-      termux-reload-settings
-      fastfetch
+    termux-reload-settings
+    fastfetch
   fi
-  }
+}

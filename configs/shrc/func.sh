@@ -25,7 +25,7 @@ extract() {
 }
 
 mkd() {
-  mkdir -p "$@" && cd "$_"
+  mkdir -p "$@" && cd "$_" || exit
   return 0
 }
 # Easy go to config
@@ -33,29 +33,35 @@ cfg() {
   folder=$1
   config_path=${XDG_CONFIG_HOME:-$HOME/.config}
   if [ -d "$config_path/$folder" ]; then
-    cd "$config_path/$folder"
-    return 0
+    cd "$config_path/$folder" || exit
   else
-    cd "$config_path"
-    return 0
+    cd "$config_path" || exit
   fi
 }
 # Move and go to the directory
 mvg() {
   if [ -d "$2" ]; then
-    mv "$1" "$2" && cd "$2"
+    mv "$1" "$2" && cd "$2" || exit
   else
     mv "$1" "$2"
   fi
 }
 
-function xdg_dirs() {
+# cd() {
+#   if [ -n "$1" ]; then
+#     cd "$@" && ls ||return 
+#   else
+#     cd ~ && ls ||return 
+#   fi
+# }
+
+xdg_dirs() {
   local xdg=(
-	  "$XDG_CONFIG_HOME" \
-	  "$XDG_CACHE_HOME" \
-	  "$XDG_RUNTIME_DIR" \
-	  "$XDG_STATE_HOME" \
-	  "$XDG_DATA_HOME"
+    "$XDG_CONFIG_HOME"
+    "$XDG_CACHE_HOME"
+    "$XDG_RUNTIME_DIR"
+    "$XDG_STATE_HOME"
+    "$XDG_DATA_HOME"
   )
   for i in "${xdg[@]}"; do
     ## echo "$i"
@@ -65,3 +71,18 @@ function xdg_dirs() {
   done
 }
 xdg_dirs
+
+# fzf
+fzvi() {
+  local FZF_DEFAULT_COMMAND="fd --follow -tf"
+  local file
+  file=$(fzf --preview "bat --style=plain --color=always {}")
+  [ -n "${file}" ] && "${EDITOR}" "${file}"
+}
+
+fzcd() {
+  local FZF_DEFAULT_COMMAND="fd --follow -td --hidden -E .git"
+  local dir
+  dir=$(fzf --preview="if [ -d {} ]; then ls --color=always -A {}; else bat {}; fi" | xargs -r -I {} echo {})
+  [ -d "$dir" ] && cd "$dir" || return 0
+}
