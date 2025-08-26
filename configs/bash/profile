@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# shopt -o vim
+shopt -s login_shell
+shopt -s autocd
+shopt -s bash_source_fullpath
+shopt -s cdspell
+shopt -s dirspell

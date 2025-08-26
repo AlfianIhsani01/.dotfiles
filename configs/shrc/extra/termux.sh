@@ -7,12 +7,14 @@ alias R='termux-reload-settings'
 #
 #
 termux-change-font() {
-  local font="/storage/emulated/0/Fonts/$1"
+  local font="$PWD/$1"
   local target_dir="$HOME/.termux"
   if [ -d "$target_dir" ] && [ -f "$font" ]; then
     ln -v -sf "$font" "$target_dir/font.ttf"
     # file "$target_dir/font.ttf"
     termux-reload-settings
+  elif [ -z "$1" ];then
+    echo -e "help: \n COMMAND [FONT FILE]"
   else
     echo "$font or $target_dir does\`t exist"
   fi

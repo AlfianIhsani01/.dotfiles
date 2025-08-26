@@ -1,7 +1,7 @@
 # Starship Configuration
 
 format = """
-[$fill](fg:defaultalt)\
+[$fill](fg:whitealt)\
 $cmd_duration\
 $line_break\
 $username\
@@ -20,144 +20,65 @@ $ocaml\
 $python\
 $rust\
 $scala\
-$typst\
 $zig\
-$meson\
-$nats\
 $direnv\
 $env_var\
-[$fill](fg:uibackgroundalt bg:uibackgroundalt)\
+$fill\
+$git_status\
 $jobs\
-$status\
 $line_break\
 $sudo\
 $git_branch\
-${custom.dot}\
 $character
 """
-
-right_format = """
-$git_status\
-"""
 add_newline = false
-palette = 'blackdiamond'
 scan_timeout = 150
 
-# Palettes Configuration
-[palettes.ayudark]
-main-dark = '#000000'
-main-light = '#2E3338'
-text = '#dfdfdf'
-text-light = '#ffffff'
-text-dark = '#8f8f8f'
-text-disabled = '#7f7f7f'
-primary = '#0f8fcf'
-info = '#FFD166'
-success = '#06D6A0'
-error = '#EF476F'
-warn = '#E55934'
-main = '#0f1419'
-background = '#0f1419'
-foreground = '#e6e1cf'
-cursor = '#f29718'
-selection = '#253340'
-cursorAccent = '#0f1419'
-black = '#000000'
-red = '#ff3333'
-green = '#b8cc52'
-yellow = '#e7c547'
-blue = '#36a3d9'
-magenta = '#f07178'
-cyan = '#95e6cb'
-white = '#ffffff'
-bblack = '#323232'
-bred = '#ff6565'
-bgreen = '#eafe84'
-byellow = '#fff779'
-bblue = '#68d5ff'
-bmagenta = '#ffa3aa'
-bcyan = '#c7fffd'
-bwhite = '#ffffff'
-
-[palettes.blackdiamond]
-# colors
-blue = '#11B7D4'
-green = '#00a884'
-greenalt = '#3585bb'
-orange = '#d4770c'
-pink = '#d46ec0'
-purple = '#a85ff1'
-red = '#E35535'
-salmon = '#c62f52'
-turquoize = '#38c7bd'
-yellow = '#c7910c'
-# levels
-danger = '#E35535'
-info = '#11B7D4'
-success = '#00a884'
-warning = '#d4770c'
-# ui
-border = '#040506'
-default = '#bec6d0'
-defaultMain = '#a0acbb'
-defaultalt = '#475262'
-primary = '#11B7D4'
-primaryalt = '#1c2027'
-uibackground = '#111418'
-uibackgroundalt = '#0c0f11'
-uibackgroundmid = '#0f1215'
-
-[status] # customized end segments for the prompt based on exit code
-disabled = false
-symbol = "[$status](underline fg:warning bg:uibackgroundalt)[▐](fg:warning bg:uibackgroundalt)"
-success_symbol = "[$status](bold fg:success bg:uibackgroundalt)[▐](fg:green bg:uibackgroundalt)"
-not_executable_symbol = "[$status](underline fg:warning bg:uibackgroundalt)[▐](fg:warning bg:uibackgroundalt)"
-not_found_symbol = "[$status](underline fg:info bg:uibackgroundalt bg:uibackgroundalt)[▐](fg:info bg:uibackgroundalt)"
-sigint_symbol = "[$status](underline fg:danger bg:uibackgroundalt)[▐](fg:danger bg:uibackgroundalt)"
-signal_symbol = "[$status](underline fg:success bg:uibackgroundalt)[▐](fg:info bg:uibackgroundalt)"
-style = "$style"
-map_symbol = true
-recognize_signal_code = true
-format = '[$symbol]($style)'
+# [status] # customized end segments for the prompt based on exit code
+# disabled = false
+# symbol = "[𐩃](fg:blue)"
+# success_symbol = "[●](fg:success)"
+# not_executable_symbol = "[𐩃](fg:bright-red)"
+# not_found_symbol = "[?](fg:bright-red)"
+# sigint_symbol = "[∅](fg:yellow)"
+# signal_symbol = "[‥](fg:success)"
+# style = "$style"
+# map_symbol = true
+# recognize_signal_code = true
+# format = '[$symbol ]($style)'
 
 [character]
-success_symbol = '[▶](defaultMain)'
-error_symbol = '[▶](salmon)'
-vimcmd_symbol = '[♦](green)'
+success_symbol = '[❯](fg:cyan)'
+error_symbol = '[❯](fg:purple)'
+vimcmd_symbol = '[◆](green)'
 
 [username]
 disabled = false
 show_always = true
 aliases = { 'u0_a290' = 'akal' }
-style_root = "bold fg:danger bg:uibackgroundalt"
-style_user = "fg:purple bg:uibackgroundalt"
-format = "[▌$user]($style)[› ](bg:uibackgroundalt)"
-
-
-[custom.dot]
-when = '! git branch'
-ignore_timeout = true
-symbol = "•"
-style = "bold pink"
-format = "[$symbol]($style)"
+style_root = "bold fg:red"
+style_user = "fg:bright-blue"
+format = "[▌](fg:blue)[$user]($style) [›](blue) "
 
 [cmd_duration]
 format = '[ $duration ]($style)'
-min_time = 1_000
-style = 'bold yellow'
+min_time = 2_500
+style = 'dimmed fg:bright-cyan'
 
 [jobs]
 disabled = false
-symbol = "╎"
-style = "fg:red bg:uibackgroundalt"
+symbol = '◻'
+style = "bold fg:red"
 number_threshold = 1
 symbol_threshold = 1
-format = '[$number]($style)$symbol'
+format = '[$symbol]($style)'
 
 [directory]
-style = 'fg:blue bg:uibackgroundalt'
+style = 'yellow'
 fish_style_pwd_dir_length = 2
 home_symbol = '⌂ Home'
+read_only = '⚠'
+read_only_style = 'bold bright-red'
 format = '[$path]($style)[$read_only]($read_only_style)'
 truncation_length = 1
 truncation_symbol = "—"
@@ -167,32 +88,32 @@ disabled = false
 
 [git_branch]
 format = '$symbol[$branch(:$remote_branch)]($style) '
-symbol = '[ 𖤝 ](bold green)'
-style = 'underline pink'
+symbol = '[▌](blue)'
+style = 'dimmed white'
 truncation_length = 4
 truncation_symbol = ''
 
 [git_status]
-disabled = true
-style = "fg:info"
-stashed = "[☐${count}](bold fg:pink)"
-staged = "[✔${count}](fg:success)"
-modified = "[↳${count}](bold fg:info)"
-typechanged = "[»${count}](fg:default)"
-renamed = "[‗${count}](fg:default)"
-untracked = "[?${count}](fg:default)"
-deleted = "[!${count}](fg:warning)"
-conflicted = "[⚐${count}](fg:danger)"
-ahead = "[↥${count}](bold fg:#64b141)"
-behind = "[↧${count}](bold fg:#e03c31)"
-up_to_date = "[ ](bold fg:greenalt)"
+disabled = false
+style = "purple"
+stashed = "[*](bright-white)"
+staged = "[#](bright-white)"
+modified = "[+](bright-white)"
+typechanged = "[÷](bright-white)"
+untracked = "[-](bright-white)"
+renamed = "[≡](bright-white)"
+deleted = "[×](bright-white)"
+conflicted = "[⚐](bright-white)"
+ahead = "[↥](bright-white)"
+behind = "[↧](bright-white)"
+up_to_date = "[^](blue)"
 diverged = """\
-    [󰽜 ](fg:danger)\
+    [⤚](fg:yellow)\
     [${ahead_count}](fg:#64b141)\
-    [⇵](bold fg:default)\
+    [⇵](bold fg:white)\
     [${behind_count}](fg:#e03c31)\
 """
-format = "[($stashed$staged$untracked$modified$renamed$deleted$conflicted)($ahead_behind)]($style)"
+format = "[「$stashed$staged$untracked$modified$renamed$deleted$conflicted$ahead_behind」]($style)"
 
 # Language Symbols
 [c]
@@ -227,7 +148,7 @@ symbol = ' '
 
 [gradle]
 format = '[ $symbol]($style)'
-symbol = 'b'
+symbol = ' '
 
 [lua]
 format = '[ $symbol]($style)'
@@ -249,10 +170,6 @@ symbol = ' '
 format = '[ $symbol]($style)'
 symbol = ''
 
-[typst]
-format = '[ $symbol]($style)'
-symbol = ' '
-
 [zig]
 format = '[ $symbol]($style)'
 symbol = ' '
@@ -261,6 +178,6 @@ symbol = ' '
 disabled = true
 
 [fill]
-symbol = "₋"
+symbol = " "
 style = '$style'
 

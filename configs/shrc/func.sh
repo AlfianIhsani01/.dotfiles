@@ -47,13 +47,13 @@ mvg() {
   fi
 }
 
-# cd() {
-#   if [ -n "$1" ]; then
-#     cd "$@" && ls ||return 
-#   else
-#     cd ~ && ls ||return 
-#   fi
-# }
+cd() {
+  if [ -n "$1" ]; then
+    builtin cd "$@" && ls || return
+  else
+    builtin cd ~ && ls || return
+  fi
+}
 
 xdg_dirs() {
   local xdg=(

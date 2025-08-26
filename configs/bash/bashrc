@@ -1,0 +1,24 @@
+#!/data/data/com.termux/files/usr/bin/env bash
+export USER
+USER=$(id -un)
+case "$-" in
+*i*)
+  if [ $SHLVL -eq 1 ]; then
+    ~/.config/fastfetch/startup.sh
+  fi
+  ;;
+esac
+# your bashrc settings come here...
+
+if [[ -d ${XDG_CONFIG_HOME:-$HOME/.config}/shrc ]]; then
+  for file in "${XDG_CONFIG_HOME:-$HOME/.config}"/shrc/*.sh; do
+    source "$file"
+  done
+  for file in "${XDG_CONFIG_HOME:-$HOME/.config}"/shrc/extra/*.sh; do
+    source "$file"
+  done
+fi
+eval "$(fzf --bash)"
+# eval "$(atuin init bash)"
+eval -- "$(starship init bash --print-full-init)"
+eval "$(zoxide init bash)"
