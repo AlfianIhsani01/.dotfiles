@@ -11,7 +11,7 @@
   remote = yellow
 
 [core]
-  pager = "sed 's/*/○/;s/\\\\/╲/g;s/\\//╱/g;s/|/│/g'| bat -p --wrap=never"
+  pager = "sed 's/*/○/g' | bat -p --wrap=never"
   editor = nvim
 
 [interactive]
@@ -94,5 +94,3 @@
 [user]
 	email = ihsani.akmal.0@gmail.com
 	name = Akal
-[safe]
-	directory = /storage/emulated/0/Projects/CustomFont

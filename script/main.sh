@@ -67,6 +67,24 @@ log_step() {
   printf "\n${BOLD}${CYAN}=== %s ===${NC}\n" "$*"
 }
 
+prompt_yes_no() {
+  local prompt="$1"
+  local default="${2:-y}"
+  local response
+
+  while true; do
+    printf "%s [%s]: " "$prompt" "$default"
+    read -r response
+    response="${response:-$default}"
+
+    case "${response,,}" in
+    y | yes) return 0 ;;
+    n | no) return 1 ;;
+    *) log_warning "Please answer 'y' or 'n'" ;;
+    esac
+  done
+}
+
 # --- Package Manager Detection ---
 detect_package_manager() {
   local managers=(pkg apt-get dnf yum pacman xbps-install apk brew)

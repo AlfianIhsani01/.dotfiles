@@ -33,24 +33,6 @@ declare -rA SHELL_NAMES=(
 #
 # }
 # --- Utility functions ---
-prompt_yes_no() {
-  local prompt="$1"
-  local default="${2:-y}"
-  local response
-
-  while true; do
-    printf "%s [%s]: " "$prompt" "$default"
-    read -r response
-    response="${response:-$default}"
-
-    case "${response,,}" in
-    y | yes) return 0 ;;
-    n | no) return 1 ;;
-    *) log_warning "Please answer 'y' or 'n'" ;;
-    esac
-  done
-}
-
 # --- Check if dotfiles exist and are valid ---
 validate_dotfiles() {
   [[ -d "$DF_HOME" ]] || return 1

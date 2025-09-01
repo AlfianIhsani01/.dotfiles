@@ -20,5 +20,5 @@ if [[ -d ${XDG_CONFIG_HOME:-$HOME/.config}/shrc ]]; then
 fi
 eval "$(fzf --bash)"
 # eval "$(atuin init bash)"
-eval -- "$(starship init bash --print-full-init)"
+eval "$(starship init bash)"
 eval "$(zoxide init bash)"

@@ -1,0 +1,23 @@
+#!/data/data/com.termux/files/usr/bin/env dash
+H=$(gh codespace | bat -r 3:25)
+echo "$H"
+while true; do
+  j=$(stty size | awk '{print $NF}')
+  i=0
+  while [ "$i" -lt "$j" ]; do
+    printf "-"
+    i=$((i + 1))
+  done
+  printf "\033[0;33m%s\033[1;37m" "codespace : "
+  read -r OPT
+  case "$OPT" in
+  exit | x | "$EOF") break ;;
+  help | h) echo "$H" ;;
+  *) gh codespace "$OPT"
+     if [ "$OPT" = ssh ]; then
+      gh codespace ls
+     fi
+    ;;
+
+  esac
+done
