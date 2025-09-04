@@ -9,7 +9,6 @@ UTILITIES="
   eza
   ripgrep
   zoxide
-  atuin
   tealdeer
   fastfetch
   starship

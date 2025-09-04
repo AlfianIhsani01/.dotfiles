@@ -4,8 +4,8 @@
 alias pdg='pkg update && pkg upgrade -y'
 alias M='termux-media-player'
 alias R='termux-reload-settings'
-#
-#
+
+
 termux-change-font() {
   local font="$PWD/$1"
   local target_dir="$HOME/.termux"

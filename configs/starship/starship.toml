@@ -55,7 +55,7 @@ vimcmd_symbol = '[◆](green)'
 [username]
 disabled = false
 show_always = true
-aliases = { 'u0_a290' = 'akal' }
+aliases = { 'u0_a343' = 'akal' }
 style_root = "bold fg:red"
 style_user = "fg:bright-blue"
 format = "[▌](fg:blue)[$user]($style) [›](blue) "
@@ -100,9 +100,9 @@ stashed = "[*](bright-white)"
 staged = "[#](bright-white)"
 modified = "[+](bright-white)"
 typechanged = "[÷](bright-white)"
-untracked = "[-](bright-white)"
+untracked = "[×](bright-white)"
 renamed = "[≡](bright-white)"
-deleted = "[×](bright-white)"
+deleted = "[-](bright-white)"
 conflicted = "[⚐](bright-white)"
 ahead = "[↥](bright-white)"
 behind = "[↧](bright-white)"
