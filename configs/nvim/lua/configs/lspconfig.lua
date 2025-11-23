@@ -1,41 +1,93 @@
 require("nvchad.configs.lspconfig").defaults()
 
-local lspconfig = require "lspconfig"
 local servers = {
-  "shellcheck",
-  "shfmt",
   "bashls",
   "ccls",
-  "clangd"
+  "clangd",
+  "biome"
 }
 vim.lsp.enable(servers)
-
-
-lspconfig.rust_analyzer.setup({
+vim.lsp.config("rust-analyzer", {
   on_attach = function(client, bufnr)
-    require 'completion'.on_attach(client)
+    require("completion").on_attach(client)
     vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
-  end
+  end,
 })
 
-lspconfig.ccls.setup {
-  cmd = { "ccls" };
-  filetypes = { "c", "cpp", "objc", "objcpp", "cuda" };
-  root_marker = { "compile_commands.json", ".ccls", ".git" };
-  workspace_required = true;
+vim.lsp.config("ccls", {
+  cmd = { "ccls" },
+  filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
+  root_marker = { "compile_commands.json", ".ccls", ".git" },
+  workspace_required = true,
   init_options = {
     cache = {
-      directory = ".ccls-cache";
-    };
-  }
-}
+      directory = ".ccls-cache",
+    },
+  },
+})
 
--- local util = require 'lspconfig.util'
-  -- settings = {
-  --   Lua = {
-  --     runtime = {
-  --       version = 'LuaJIT',
-  --     }
-  --   }
-  -- }
+local util = require 'lspconfig.util'
+vim.lsp.config("biome", {
+  cmd = function(dispatchers, config)
+    local cmd = 'biome'
+    local local_cmd = (config or {}).root_dir and config.root_dir .. '/node_modules/.bin/biome'
+    if local_cmd and vim.fn.executable(local_cmd) == 1 then
+      cmd = local_cmd
+    end
+    return vim.lsp.rpc.start({ cmd, 'lsp-proxy' }, dispatchers)
+  end,
+  filetypes = {
+    'astro',
+    'css',
+    'graphql',
+    'html',
+    'javascript',
+    'javascriptreact',
+    'json',
+    'jsonc',
+    'svelte',
+    'typescript',
+    'typescript.tsx',
+    'typescriptreact',
+    'vue',
+  },
+  workspace_required = true,
+  root_dir = function(bufnr, on_dir)
+    -- The project root is where the LSP can be started from
+    -- As stated in the documentation above, this LSP supports monorepos and simple projects.
+    -- We select then from the project root, which is identified by the presence of a package
+    -- manager lock file.
+    local root_markers = { 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock' }
+    -- Give the root markers equal priority by wrapping them in a table
+    root_markers = vim.fn.has('nvim-0.11.3') == 1 and { root_markers, { '.git' } }
+      or vim.list_extend(root_markers, { '.git' })
+    -- We fallback to the current working directory if no project root is found
+    local project_root = vim.fs.root(bufnr, root_markers) or vim.fn.getcwd()
 
+    -- We know that the buffer is using Biome if it has a config file
+    -- in its directory tree.
+    local filename = vim.api.nvim_buf_get_name(bufnr)
+    local biome_config_files = { 'biome.json', 'biome.jsonc' }
+    biome_config_files = util.insert_package_json(biome_config_files, 'biome', filename)
+    local is_buffer_using_biome = vim.fs.find(biome_config_files, {
+      path = filename,
+      type = 'file',
+      limit = 1,
+      upward = true,
+      stop = vim.fs.dirname(project_root),
+    })[1]
+    if not is_buffer_using_biome then
+      return
+    end
+
+    on_dir(project_root)
+  end,
+})
+-- local util = require 'vim.lsp.config(util'
+-- settings = {
+--   Lua = {
+--     runtime = {
+--       version = 'LuaJIT',
+--     }
+--   }
+-- }

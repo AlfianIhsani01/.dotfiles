@@ -17,21 +17,22 @@ export HISTTIMEFORMAT="%F %T " # add timestamp to history
 export HISTCONTROL=erasedups:ignoredups:ignorespace
 
 # fzf
-export FZF_DEFAULT_COMMAND="
-  fd --hidden
-     --follow
-     -E .git 
-     -E .ssh
-     -E .cache 
-     -E ${XDG_DATA_DIR}
-     -E ${XDG_CACHE_DIR}"
-export FZF_DEFAULT_OPTS="
-  --style=minimal
-  --height 25%
-  --border
-  --ansi
-  --layout=reverse
-  --prompt='❯ '
+export FZF_DEFAULT_COMMAND="\
+  fd --hidden\
+     --follow\
+     -E .git\
+     -E .ssh\
+     -E .cache\
+     -E .local/share\
+     -E .cache\
+"
+export FZF_DEFAULT_OPTS="\
+  --style=minimal\
+  --height 25%\
+  --border\
+  --ansi\
+  --layout=reverse\
+  --prompt='❯ '\
   --color='dark\
     ,fg:#b4b4b9\
     ,bg:#020221\
@@ -50,10 +51,12 @@ export FZF_DEFAULT_OPTS="
     ,border:#36363a'\
 "
 
-export BAT_THEME="default"
-export BAT_THEME_DARK="base16"
+# bat
+export BAT_THEME="falcon"
+# export BAT_THEME_DARK="${XDG_DATA_DIR}/share/nvim/lazy/"
 export BAT_THEME_LIGHT="ansi"
 export BAT_STYLE="rule"
 export BAT_PAGER="less"
 
-export AUTOLS_OPTIONS="-c 'ls' -l 100"
+export _ZO_DOCTOR=0
+# export AUTOLS_OPTIONS="-c 'ls' -l 100"

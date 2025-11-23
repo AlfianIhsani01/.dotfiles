@@ -14,33 +14,18 @@ M.base46 = {
   -- },
 }
 
-M.nvdash = {
-  load_on_startup = true,
-
-  header = {
-    " ┳━━━┓┏━━━┓┏━━━┓▗▄▖ ▗▄▖▄▄▗▄▄▄▄▄▄▄ ",
-    " ┃   ┃┃   ┃┃   ┃ █   ▐▌ █  █  █ ",
-    " ┃   ┃┣━━━┛┃   ┃ █   ▐▌ █  █  █ ",
-    " ┃   ┃┃    ┃   ┃ █   ▐▌ █  █  █ ",
-    " ┻   ┻┗━━━┛┗━━━┛▝▀▀    ▀▀▝▀  ▀  ▀▘",
-    "                                  "
-  },
-
-}
+-- M.nvdash = { load_on_startup = true }
 M.ui = {
   statusline = {
-    custom_sl = true,
-    override_statusline_fn =function ()
-      require("configs.lualine")
-    end
-    -- theme = "minimal",
-    -- separator_style = "block",
-    -- order = { "mode", "git", "%=", "lsp_msg", "%=", "diagnostics", "lsp", "cursor" },
+    theme = "minimal",
+    separator_style = "arrow",
+    order = { "mode", "git", "%=", "lsp_msg", "%=", "diagnostics", "lsp", "cursor" },
   },
+
   tabufline = {
     lazyload = true,
   },
-  transparency = true
+  transparency = false,
 }
 
 return M

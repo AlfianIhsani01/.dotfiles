@@ -1,9 +1,9 @@
 # Starship Configuration
 
-format = """
-[$fill](fg:whitealt)\
-$cmd_duration\
-$line_break\
+# [$fill](dimmed fg:black)\
+# $cmd_duration\
+# $line_break\
+format = """\
 $username\
 $directory\
 $package\
@@ -23,45 +23,48 @@ $scala\
 $zig\
 $direnv\
 $env_var\
-$fill\
+[$fill](dimmed fg:blue)\
 $git_status\
 $jobs\
+$status\
 $line_break\
 $sudo\
 $git_branch\
-$character
+$character\
 """
-add_newline = false
+add_newline = true
 scan_timeout = 150
 
-# [status] # customized end segments for the prompt based on exit code
-# disabled = false
-# symbol = "[𐩃](fg:blue)"
-# success_symbol = "[●](fg:success)"
-# not_executable_symbol = "[𐩃](fg:bright-red)"
-# not_found_symbol = "[?](fg:bright-red)"
-# sigint_symbol = "[∅](fg:yellow)"
-# signal_symbol = "[‥](fg:success)"
-# style = "$style"
-# map_symbol = true
-# recognize_signal_code = true
-# format = '[$symbol ]($style)'
+right_format="$status"
+
+[status] # customized end segments for the prompt based on exit code
+disabled = true
+symbol = "[𐩃](fg:blue)"
+success_symbol = "[●](fg:success)"
+not_executable_symbol = "[𐩃](fg:bright-red)"
+not_found_symbol = "[?](fg:bright-red)"
+sigint_symbol = "[∅](fg:yellow)"
+signal_symbol = "[‥](fg:success)"
+style = "$style"
+map_symbol = true
+recognize_signal_code = true
+format = 'status [$symbol $status]($style)'
 
 [character]
-success_symbol = '[❯](fg:cyan)'
+success_symbol = '[❯](fg:#ff5fff)'
 error_symbol = '[❯](fg:purple)'
 vimcmd_symbol = '[◆](green)'
 
 [username]
 disabled = false
-show_always = true
+show_always = false
 aliases = { 'u0_a343' = 'akal' }
 style_root = "bold fg:red"
 style_user = "fg:bright-blue"
-format = "[▌](fg:blue)[$user]($style) [›](blue) "
+format = "[▌](fg:blue)[$user]($style) "
 
 [cmd_duration]
-format = '[ $duration ]($style)'
+format = '[took $duration ]($style)'
 min_time = 2_500
 style = 'dimmed fg:bright-cyan'
 
@@ -76,10 +79,10 @@ format = '[$symbol]($style)'
 [directory]
 style = 'yellow'
 fish_style_pwd_dir_length = 2
-home_symbol = '⌂ Home'
-read_only = '⚠'
+# home_symbol = '⌂'
+read_only = '⚠ '
 read_only_style = 'bold bright-red'
-format = '[$path]($style)[$read_only]($read_only_style)'
+format = '[› ](blue)[$path ]($style)[$read_only]($read_only_style)'
 truncation_length = 1
 truncation_symbol = "—"
 
@@ -117,67 +120,67 @@ format = "[「$stashed$staged$untracked$modified$renamed$deleted$conflicted$ahea
 
 # Language Symbols
 [c]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 style = 'blue'
 
 [rust]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 style = 'red'
 
 [cmake]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [elm]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [golang]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = '󰟓 '
 
 [java]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [kotlin]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [gradle]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [lua]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [nodejs]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [ocaml]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [python]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [scala]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ''
 
 [zig]
-format = '[ $symbol]($style)'
+format = '[$symbol]($style)'
 symbol = ' '
 
 [package]
 disabled = true
 
 [fill]
-symbol = " "
+symbol = "─"
 style = '$style'
 

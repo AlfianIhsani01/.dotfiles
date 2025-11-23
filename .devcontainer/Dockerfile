@@ -13,14 +13,20 @@ RUN xbps-install -Syu && xbps-install -y \
     openssh \
     openssl \
     lsof \
-    zsh \
     bash \
     sudo \
     shadow \
-    tar \
-    unzip \
     which \
     && xbps-remove -O
+
+COPY ./utils.sh /utils.sh
+RUN chmod +x /utils.sh
+
+COPY ./setup.sh /setup.sh
+RUN chmod +x /setup.sh
+RUN /setup.sh
+
+ENTRYPOINT ["/usr/local/share/ssh-init.sh"]
 
 RUN useradd -m -G wheel akal && \
     echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers

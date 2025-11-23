@@ -94,3 +94,5 @@
 [user]
 	email = ihsani.akmal.0@gmail.com
 	name = Akal
+[safe]
+	directory = /storage/emulated/0/Projects/CustomFont

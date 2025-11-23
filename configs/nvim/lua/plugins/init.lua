@@ -18,12 +18,21 @@ return {
     "nvim-treesitter/nvim-treesitter",
     opts = {
       ensure_installed = {
-        "vim", "lua", "vimdoc",
-        "html", "css", "c"
+        "vim",
+        "lua",
+        "vimdoc",
+        "bash",
+        "html",
+        "css",
+        "c",
+        "javascript",
       },
     },
   },
   {
-    "junegunn/vim-easy-align"
-  }
+    "nvim-mini/mini.align",
+  },
+  -- {
+  --   "junegunn/vim-easy-align"
+  -- }
 }

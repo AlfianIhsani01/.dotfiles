@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env dash
+[ ! $(gh) ] && echo "please install gh-cli first!" &&read -r X
 H=$(gh codespace | bat -r 3:25)
 echo "$H"
 while true; do
@@ -9,12 +10,12 @@ while true; do
     i=$((i + 1))
   done
   printf "\033[0;33m%s\033[1;37m" "codespace : "
-  read -r OPT
-  case "$OPT" in
+  read -r CMD
+  case "$CMD" in
   exit | x | "$EOF") break ;;
   help | h) echo "$H" ;;
-  *) gh codespace "$OPT"
-     if [ "$OPT" = ssh ]; then
+  *) gh codespace "$CMD"
+     if [ "$CMD" = ssh ]; then
       gh codespace ls
      fi
     ;;
