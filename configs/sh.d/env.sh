@@ -11,6 +11,7 @@ export XDG_BIN_DIR="$HOME/.local/bin"
 export PATH="$PATH:${XDG_BIN_DIR:-$HOME/.local/bin}"
 export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share}/cargo/bin"
 export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin"
+export PATH="$PATH:${HOME}/.deno/bin"
 export DFS_HOME="${HOME}/.dotfiles"
 
 ## Nodejs

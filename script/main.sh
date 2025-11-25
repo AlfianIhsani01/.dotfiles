@@ -20,7 +20,6 @@ declare -r NC='\033[0m'
 
 # Configuration
 declare -r TAB_SIZE=15
-# declare -rg SPINNER_DELAY=0.15
 
 # Package manager commands mapping
 declare -rA PKG_INSTALL_CMDS=(
@@ -51,7 +50,7 @@ declare -i missing_count=0
 # --- Logging functions ---
 log() {
    local TYPE="$1"
-   shift # Move past the log type argument
+   shift
    local MESSAGE="$*"
 
    case "$TYPE" in
@@ -76,23 +75,6 @@ log() {
       return 1
       ;;
    esac
-}
-prompt_yes_no() {
-   local prompt="$1"
-   local default="${2:-y}"
-   local response
-
-   while true; do
-      printf "%s [%s]: " "$prompt" "$default"
-      read -r response
-      response="${response:-$default}"
-
-      case "${response,,}" in
-      y | yes) return 0 ;;
-      n | no) return 1 ;;
-      *) log -w "Please answer 'y' or 'n'" ;;
-      esac
-   done
 }
 
 # --- Package Manager Detection ---
@@ -132,17 +114,18 @@ is_installed() {
 # --- Enhanced spinner with better animation ---
 spinner() {
    local pid=$1
-   local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+   # local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+   local spinstr='◧◩⬒⬔◨◪⬓⬕'
    local i=0
-
+   echo "$pid"
    # Hide the cursor and save its position
    tput civis
    tput sc
 
    while kill -0 "$pid" 2>/dev/null; do
       i=$(((i + 1) % ${#spinstr}))
-      tput rc # Restore cursor position
-      printf "%c" "${spinstr:$i:1}"
+      tput rc
+      printf "%s" "${spinstr:$i:1}"
       sleep 0.1
    done
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/data/data/com.termux/files/usr/bin/env bash
 
 # ------------------------------------------------------------------------------
 # Dotfiles Setup Script
@@ -32,33 +32,31 @@ validate_dotfiles() {
 }
 
 # --- Download dotfiles with retry logic ---
-download_dotfiles() {
-   local attempt=1
+check_dotfiles() {
+   local attempt=0
 
-   log -t "Checking Dotfiles"
+   echo "Checking Dotfiles"
 
    while ((attempt <= MAX_ATTEMPTS)); do
-      log -i "Checking for dotfiles at $DF_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
+      echo "Checking for dotfiles at $DF_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
 
       if validate_dotfiles; then
-         log -s "Dotfiles found and validated at $DF_HOME"
+         echo "Dotfiles found and validated at $DF_HOME"
          export DF_HOME
          return 0
       fi
 
-      log -w "Dotfiles not found or invalid"
+      echo "Dotfiles not found or invalid"
 
       if ((attempt == MAX_ATTEMPTS)); then
-         log -e "Maximum attempts reached"
+         echo "Maximum attempts reached"
          return 1
       fi
 
       if prompt_yes_no "Clone dotfiles with Git?"; then
 
-         log -i "Installing git if needed..."
-         if command -v check_and_install_packages &>/dev/null; then
-            check_and_install_packages git
-         else
+         echo "Installing git if needed..."
+         if ! command -v git --version &>/dev/null; then
             # Fallback package installation
             if command -v apt-get &>/dev/null; then
                sudo apt-get update && sudo apt-get install -y git
@@ -67,27 +65,27 @@ download_dotfiles() {
             elif command -v dnf &>/dev/null; then
                sudo dnf install -y git
             else
-               log -e "Cannot install git automatically. Please install git manually."
+               echo "Cannot install git automatically. Please install git manually."
                return 1
             fi
          fi
 
-         log -i "Cloning dotfiles repository..."
+         echo "Cloning dotfiles repository..."
          if [[ -d "$DF_HOME" ]]; then
-            log -w "Removing existing incomplete dotfiles directory"
+            echo "Removing existing incomplete dotfiles directory"
             rm -rf "$DF_HOME"
          fi
 
          if git clone --depth 1 "$DF_URL" "$DF_HOME"; then
-            log -s "Dotfiles cloned successfully"
+            echo "Dotfiles cloned successfully"
             export DF_HOME
          else
-            log -e "Failed to clone dotfiles repository"
+            echo "Failed to clone dotfiles repository"
             ((attempt++))
             continue
          fi
       else
-         log -e "Cannot proceed without dotfiles"
+         echo "Cannot proceed without dotfiles"
          return 1
       fi
 
@@ -169,12 +167,17 @@ configure_termux() {
 main_setup() {
    local packages=("$@")
 
-   log -t "Starting Dotfiles Setup"
+   echo "Starting Dotfiles Setup"
 
    # Download dotfiles if needed
-   if ! download_dotfiles; then
-      log -e "Failed to obtain dotfiles"
+   if ! check_dotfiles; then
+      echo "Failed to obtain dotfiles"
       exit 1
+   fi
+
+   # Source function definitions
+   if ! source_dotfiles_script "script/main.sh"; then
+      log -w "main script not found, using fallback methods"
    fi
 
    # Install packages
@@ -199,6 +202,23 @@ main_setup() {
    log -i "You may need to restart your terminal or log out/in for all changes to take effect"
 }
 
+prompt_yes_no() {
+   local prompt="$1"
+   local default="${2:-y}"
+   local response
+
+   while true; do
+      printf "%s [%s]: " "$prompt" "$default"
+      read -r response
+      response="${response:-$default}"
+
+      case "${response,,}" in
+      y | yes) return 0 ;;
+      n | no) return 1 ;;
+      *) log -w "Please answer 'y' or 'n'" ;;
+      esac
+   done
+}
 # --- Help function ---
 show_help() {
    echo -e "
@@ -230,10 +250,6 @@ ${BOLD}REPOSITORY:${NC}
 
 # --- Main execution ---
 main() {
-   # Source function definitions
-   if ! source_dotfiles_script "script/main.sh"; then
-      log -w "main script not found, using fallback methods"
-   fi
 
    local skip_packages=false
    local force_download=false

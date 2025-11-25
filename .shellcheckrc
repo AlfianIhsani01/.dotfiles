@@ -1,0 +1,5 @@
+#!/bin/shellcheck
+
+default-shell=bash
+external-sources=true
+source-path=./bootstrap.sh,./script/main.sh,./script/termux.sh,./script/stow.sh
