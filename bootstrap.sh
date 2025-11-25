@@ -276,12 +276,13 @@ main() {
          shift
          ;;
       -*)
-         log -e "Unknown option: $1"
+         echo "Unknown option: $1"
          printf "Use --help for usage information\n"
          exit 1
          ;;
       *)
          packages+=("$1")
+         main_setup
          shift
          ;;
       esac
@@ -289,7 +290,7 @@ main() {
 
    # Force download if requested
    if [[ "$force_download" == true ]] && [[ -d "$DF_HOME" ]]; then
-      log -i "Force download requested, removing existing dotfiles"
+      echo "Force download requested, removing existing dotfiles"
       rm -rf "$DF_HOME"
    fi
 
@@ -297,7 +298,7 @@ main() {
    if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
       main_setup "${packages[@]}"
    else
-      log -i "Script sourced, functions available for use"
+      echo "Script sourced, functions available for use"
    fi
 }
 main "$@"
