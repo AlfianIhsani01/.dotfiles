@@ -6,15 +6,13 @@
 # Enhanced bash version with improved functionality and user experience
 # ------------------------------------------------------------------------------
 
-set -euo pipefail
-
 # Configuration
 # Stow options
 declare -r STOW_VERBOSE_LEVEL=2
 declare -a STOW_BASE_OPTIONS=(
-    "--verbose=$STOW_VERBOSE_LEVEL"
-    "--dotfiles"
-    "--no-folding"
+   "--verbose=$STOW_VERBOSE_LEVEL"
+   "--dotfiles"
+   "--no-folding"
 )
 
 # Global counters
@@ -24,250 +22,250 @@ declare -i skipped_count=0
 
 # --- Validate dotfiles directory structure ---
 validate_dotfiles_structure() {
-    log_debug "Validating dotfiles structure at $DFS_HOME"
+   _log -t "Validating dotfiles structure at $DFS_HOME"
 
-    if [[ ! -d "$DFS_HOME" ]]; then
-        log_error "Dotfiles directory not found: $DFS_HOME"
-        return 1
-    fi
+   if [[ ! -d "$DFS_HOME" ]]; then
+      _log -e "Dotfiles directory not found: $DFS_HOME"
+      return 1
+   fi
 
-    if [[ ! -d "$DFS_HOME/configs" ]]; then
-        log_error "Configs directory not found: $DFS_HOME/configs"
-        log_info "Expected structure: $DFS_HOME/configs/[package-name]/..."
-        return 1
-    fi
+   if [[ ! -d "$DFS_HOME/configs" ]]; then
+      _log -e "Configs directory not found: $DFS_HOME/configs"
+      _log -i "Expected structure: $DFS_HOME/configs/[package-name]/..."
+      return 1
+   fi
 
-    # Check if there are any config packages
-    local config_count
-    config_count=$(find "$DFS_HOME/configs" -maxdepth 1 -type d ! -path "$DFS_HOME/configs" | wc -l)
+   # Check if there are any config packages
+   local config_count
+   config_count=$(find "$DFS_HOME/configs" -maxdepth 1 -type d ! -path "$DFS_HOME/configs" | wc -l)
 
-    if ((config_count == 0)); then
-        log_warning "No configuration packages found in $DFS_HOME/configs"
-        return 1
-    fi
+   if ((config_count == 0)); then
+      _log -w "No configuration packages found in $DFS_HOME/configs"
+      return 1
+   fi
 
-    log_debug "Found $config_count configuration package(s)"
-    return 0
+   _log -t "Found $config_count configuration package(s)"
+   return 0
 }
 
 # --- Create XDG config directory if needed ---
 ensure_xdg_config() {
-    if [[ ! -d "$XDG_CONFIG_HOME" ]]; then
-        log_info "Creating XDG config directory: $XDG_CONFIG_HOME"
-        if mkdir -p "$XDG_CONFIG_HOME"; then
-            log_success "XDG config directory created"
-        else
-            log_error "Failed to create XDG config directory"
-            return 1
-        fi
-    else
-        log_debug "XDG config directory exists: $XDG_CONFIG_HOME"
-    fi
+   if [[ ! -d "$XDG_CONFIG_HOME" ]]; then
+      _log -i "Creating XDG config directory: $XDG_CONFIG_HOME"
+      if mkdir -p "$XDG_CONFIG_HOME"; then
+         _log -s "XDG config directory created"
+      else
+         _log -e "Failed to create XDG config directory"
+         return 1
+      fi
+   else
+      _log -t "XDG config directory exists: $XDG_CONFIG_HOME"
+   fi
 }
 
 # --- Deploy a single configuration package ---
 deploy_package() {
-    local package_name="$1"
-    local package_path="$DFS_HOME"
-    local target_path="$XDG_CONFIG_HOME"
+   local package_name="$1"
+   local package_path="$DFS_HOME"
+   local target_path="$XDG_CONFIG_HOME"
 
-    log_info "Deploying package: $package_name"
+   _log -i "Deploying package: $package_name"
 
-    # Validate package directory
-    if [[ ! -d "$package_path" ]]; then
-        log_error "Package directory not found: $package_path"
-        ((failed_count++))
-        return 1
-    fi
+   # Validate package directory
+   if [[ ! -d "$package_path" ]]; then
+      _log -e "Package directory not found: $package_path"
+      ((failed_count++))
+      return 1
+   fi
 
-    # Check if package has any files
-    if [[ -z "$(find "$package_path" -t d 2>/dev/null)" ]]; then
-        log_warning "Package $package_name contains no files, skipping"
-        ((skipped_count++))
-        return 0
-    fi
+   # Check if package has any files
+   if [[ -z "$(find "$package_path" -t d 2>/dev/null)" ]]; then
+      _log -w "Package $package_name contains no files, skipping"
+      ((skipped_count++))
+      return 0
+   fi
 
-    # Create target directory if it doesn't exist
-    if [[ ! -d "$target_path" ]]; then
-        log_debug "Creating target directory: $target_path"
-        if ! mkdir -p "$target_path"; then
-            log_error "Failed to create target directory: $target_path"
-            ((failed_count++))
-            return 1
-        fi
-    fi
+   # Create target directory if it doesn't exist
+   if [[ ! -d "$target_path" ]]; then
+      _log -t "Creating target directory: $target_path"
+      if ! mkdir -p "$target_path"; then
+         _log -e "Failed to create target directory: $target_path"
+         ((failed_count++))
+         return 1
+      fi
+   fi
 
-    # Prepare stow command
-    local stow_cmd=(
-        stow
-        "${STOW_BASE_OPTIONS[@]}"
-        "--target=$target_path"
-        "--dir=$DFS_HOME"
-        "$package_name"
-    )
+   # Prepare stow command
+   local stow_cmd=(
+      stow
+      "${STOW_BASE_OPTIONS[@]}"
+      "--target=$target_path"
+      "--dir=$DFS_HOME"
+      "$package_name"
+   )
 
-    log_debug "Executing: ${stow_cmd[*]}"
+   _log -t "Executing: ${stow_cmd[*]}"
 
-    # Execute stow command with error handling
-    local stow_output
-    if stow_output=$("${stow_cmd[@]}" 2>&1); then
-        log_success "Package $package_name deployed successfully"
-        [[ -n "$stow_output" ]] && log_debug "Stow output: $stow_output"
-        ((deployed_count++))
-        return 0
-    else
-        log_error "Failed to deploy package $package_name"
-        log_error "Stow error: $stow_output"
-        ((failed_count++))
-        return 1
-    fi
+   # Execute stow command with error handling
+   local stow_output
+   if stow_output=$("${stow_cmd[@]}" 2>&1); then
+      _log -s "Package $package_name deployed successfully"
+      [[ -n "$stow_output" ]] && _log -t "Stow output: $stow_output"
+      ((deployed_count++))
+      return 0
+   else
+      _log -e "Failed to deploy package $package_name"
+      _log -e "Stow error: $stow_output"
+      ((failed_count++))
+      return 1
+   fi
 }
 
 # --- Undeploy a configuration package ---
 undeploy_package() {
-    local package_name="$1"
-    local target_path="$XDG_CONFIG_HOME/$package_name"
+   local package_name="$1"
+   local target_path="$XDG_CONFIG_HOME/$package_name"
 
-    log_info "Undeploying package: $package_name"
+   _log -i "Undeploying package: $package_name"
 
-    local stow_cmd=(
-        stow
-        "${STOW_BASE_OPTIONS[@]}"
-        "--delete"
-        "--target=$target_path"
-        "--dir=$DFS_HOME"
-        "$package_name"
-    )
+   local stow_cmd=(
+      stow
+      "${STOW_BASE_OPTIONS[@]}"
+      "--delete"
+      "--target=$target_path"
+      "--dir=$DFS_HOME"
+      "$package_name"
+   )
 
-    log_debug "Executing: ${stow_cmd[*]}"
+   _log -t "Executing: ${stow_cmd[*]}"
 
-    if "${stow_cmd[@]}" &>/dev/null; then
-        log_success "Package $package_name undeployed successfully"
-        return 0
-    else
-        log_error "Failed to undeploy package $package_name"
-        return 1
-    fi
+   if "${stow_cmd[@]}" &>/dev/null; then
+      _log -s "Package $package_name undeployed successfully"
+      return 0
+   else
+      _log -e "Failed to undeploy package $package_name"
+      return 1
+   fi
 }
 
 # --- Main deployment function ---
 deploy() {
-    local packages=("$@")
-    local operation="${DEPLOY_OPERATION:-deploy}"
+   local packages=("$@")
+   local operation="${DEPLOY_OPERATION:-deploy}"
 
-    log_step "Starting Dotfiles Deployment"
+   _log step "Starting Dotfiles Deployment"
 
-    # Reset counters
-    deployed_count=0
-    failed_count=0
-    skipped_count=0
+   # Reset counters
+   deployed_count=0
+   failed_count=0
+   skipped_count=0
 
-    # Check and install stow
-    if ! check_and_install_stow; then
-        log_error "Cannot proceed without stow"
-        return 1
-    fi
+   # Check and install stow
+   if ! check_and_install_stow; then
+      _log -e "Cannot proceed without stow"
+      return 1
+   fi
 
-    # Validate dotfiles structure
-    if ! validate_dotfiles_structure; then
-        return 1
-    fi
+   # Validate dotfiles structure
+   if ! validate_dotfiles_structure; then
+      return 1
+   fi
 
-    # Ensure XDG config directory exists
-    if ! ensure_xdg_config; then
-        return 1
-    fi
+   # Ensure XDG config directory exists
+   if ! ensure_xdg_config; then
+      return 1
+   fi
 
-    # Determine packages to deploy
-    if [[ ${#packages[@]} -eq 0 ]]; then
-        log_info "No specific packages provided, deploying all available packages"
-        mapfile -t packages < <(find "$DFS_HOME" -maxdepth 1 -type d ! -path "$DFS_HOME/configs" -exec basename {} \;)
-    fi
+   # Determine packages to deploy
+   if [[ ${#packages[@]} -eq 0 ]]; then
+      _log -i "No specific packages provided, deploying all available packages"
+      mapfile -t packages < <(find "$DFS_HOME" -maxdepth 1 -type d ! -path "$DFS_HOME/configs" -exec basename {} \;)
+   fi
 
-    if [[ ${#packages[@]} -eq 0 ]]; then
-        log_warning "No packages found to deploy"
-        return 0
-    fi
+   if [[ ${#packages[@]} -eq 0 ]]; then
+      _log -w "No packages found to deploy"
+      return 0
+   fi
 
-    log_info "Found ${#packages[@]} package(s) to $operation: ${packages[*]}"
+   _log -i "Found ${#packages[@]} package(s) to $operation: ${packages[*]}"
 
-    # Deploy/undeploy each package
-    for package in "${packages[@]}"; do
-        case "$operation" in
-            deploy)
-                deploy_package "$package"
-                ;;
-            undeploy)
-                undeploy_package "$package"
-                ;;
-            *)
-                log_error "Unknown operation: $operation"
-                return 1
-                ;;
-        esac
-    done
+   # Deploy/undeploy each package
+   for package in "${packages[@]}"; do
+      case "$operation" in
+      deploy)
+         deploy_package "$package"
+         ;;
+      undeploy)
+         undeploy_package "$package"
+         ;;
+      *)
+         _log -e "Unknown operation: $operation"
+         return 1
+         ;;
+      esac
+   done
 
-    # Summary
-    log_step "Deployment Summary"
-    case "$operation" in
-        deploy)
-            log_success "Deployed: $deployed_count packages"
-            ;;
-        undeploy)
-            log_success "Undeployed: $deployed_count packages"
-            ;;
-    esac
+   # Summary
+   _log step "Deployment Summary"
+   case "$operation" in
+   deploy)
+      _log -s "Deployed: $deployed_count packages"
+      ;;
+   undeploy)
+      _log -s "Undeployed: $deployed_count packages"
+      ;;
+   esac
 
-    [[ $skipped_count -gt 0 ]] && log_warning "Skipped: $skipped_count packages"
-    [[ $failed_count -gt 0 ]] && log_error "Failed: $failed_count packages"
+   [[ $skipped_count -gt 0 ]] && _log -w "Skipped: $skipped_count packages"
+   [[ $failed_count -gt 0 ]] && _log -e "Failed: $failed_count packages"
 
-    if [[ $failed_count -gt 0 ]]; then
-        return 1
-    fi
+   if [[ $failed_count -gt 0 ]]; then
+      return 1
+   fi
 
-    return 0
+   return 0
 }
 
 # --- Undeploy function ---
 undeploy() {
-    DEPLOY_OPERATION=undeploy deploy "$@"
+   DEPLOY_OPERATION=undeploy deploy "$@"
 }
 
 # --- List available packages ---
 list_packages() {
-    log_step "Available Configuration Packages"
+   _log step "Available Configuration Packages"
 
-    if ! validate_dotfiles_structure; then
-        return 1
-    fi
+   if ! validate_dotfiles_structure; then
+      return 1
+   fi
 
-    local packages
-    mapfile -t packages < <(find "$DFS_HOME/configs" -maxdepth 1 -type d ! -path "$DFS_HOME/configs" -exec basename {} \; | sort)
+   local packages
+   mapfile -t packages < <(find "$DFS_HOME/configs" -maxdepth 1 -type d ! -path "$DFS_HOME/configs" -exec basename {} \; | sort)
 
-    if [[ ${#packages[@]} -eq 0 ]]; then
-        log_warning "No configuration packages found"
-        return 0
-    fi
+   if [[ ${#packages[@]} -eq 0 ]]; then
+      _log -w "No configuration packages found"
+      return 0
+   fi
 
-    printf "${BOLD}Package${NC} %20s ${BOLD}Status${NC}\n" ""
-    printf "%-30s %s\n" "$(printf '%.0s─' {1..30})" "$(printf '%.0s─' {1..15})"
+   printf "${BOLD}Package${NC} %20s ${BOLD}Status${NC}\n" ""
+   printf "%-30s %s\n" "$(printf '%.0s─' {1..30})" "$(printf '%.0s─' {1..15})"
 
-    for package in "${packages[@]}"; do
-        local status="Not deployed"
-        local color="$RED"
+   for package in "${packages[@]}"; do
+      local status="Not deployed"
+      local color="$RED"
 
-        if [[ -L "$XDG_CONFIG_HOME/$package" ]] || [[ -d "$XDG_CONFIG_HOME/$package/.stow-local-ignore" ]]; then
-            status="Deployed"
-            color="$GREEN"
-        fi
+      if [[ -L "$XDG_CONFIG_HOME/$package" ]] || [[ -d "$XDG_CONFIG_HOME/$package/.stow-local-ignore" ]]; then
+         status="Deployed"
+         color="$GREEN"
+      fi
 
-        printf "%-30s ${color}%s${NC}\n" "$package" "$status"
-    done
+      printf "%-30s ${color}%s${NC}\n" "$package" "$status"
+   done
 }
 
 # --- Help function ---
 show_help() {
-    cat << EOF
+   cat <<EOF
 ${BOLD}Stow Deployment Script${NC}
 
 ${BOLD}USAGE:${NC}
@@ -296,35 +294,35 @@ EOF
 
 # --- Main execution (only if run directly) ---
 main() {
-    case "${1:-}" in
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        deploy)
-            shift
-            deploy "$@"
-            ;;
-        undeploy)
-            shift
-            undeploy "$@"
-            ;;
-        list|list_packages)
-            list_packages
-            ;;
-        *)
-            if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-                log_info "Script executed directly, deploying all packages..."
-                deploy "$@"
-            else
-                log_info "Script sourced, functions available for use"
-                log_info "Use 'deploy', 'undeploy', or 'list_packages' functions"
-            fi
-            ;;
-    esac
+   case "${1:-}" in
+   -h | --help)
+      show_help
+      exit 0
+      ;;
+   deploy)
+      shift
+      deploy "$@"
+      ;;
+   undeploy)
+      shift
+      undeploy "$@"
+      ;;
+   list | list_packages)
+      list_packages
+      ;;
+   *)
+      if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+         _log -i "Script executed directly, deploying all packages..."
+         deploy "$@"
+      else
+         _log -i "Script sourced, functions available for use"
+         _log -i "Use 'deploy', 'undeploy', or 'list_packages' functions"
+      fi
+      ;;
+   esac
 }
 
 # Execute main function if script is run directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+   main "$@"
 fi

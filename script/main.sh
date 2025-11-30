@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/data/data/com.termux/files/usr/bin/bash
 
 # ------------------------------------------------------------------------------
 # setup.sh
@@ -7,71 +7,67 @@
 # Improved bash version with enhanced features
 # ------------------------------------------------------------------------------
 
-set -euo pipefail # Exit on error, undefined vars, and pipe failures
-
 # Colors for output
-declare -r RED='\033[0;31m'
-declare -r GREEN='\033[0;32m'
-declare -r YELLOW='\033[0;33m'
-declare -r BLUE='\033[0;34m'
-declare -r CYAN='\033[0;36m'
-declare -r BOLD='\033[1m'
-declare -r NC='\033[0m'
-
-# Configuration
-declare -r TAB_SIZE=15
+declare -r RED="\033[0;31m"
+declare -r GREEN="\033[0;32m"
+declare -r YELLOW="\033[0;33m"
+declare -r BLUE="\033[0;34m"
+declare -r CYAN="\033[0;36m"
+declare -r BOLD="\033[1m"
+# declare -r DIM="\033[2m"
+declare -r NC="\033[0m"
 
 # Package manager commands mapping
 declare -rA PKG_INSTALL_CMDS=(
-   [apt]="sudo apt-get install -y"
-   [dnf]="sudo dnf install -y"
-   [yum]="sudo yum install -y"
-   [pacman]="sudo pacman -S --noconfirm"
-   [brew]="brew install"
-   [xbps]="sudo xbps-install -y"
    [apk]="sudo apk add"
+   [apt]="sudo apt-get install -y"
+   [brew]="brew install"
+   [dnf]="sudo dnf install -y"
+   [pacman]="sudo pacman -S --noconfirm"
+   [termux]="pkg install -y"
+   [xbps]="sudo xbps-install -y"
+   [yum]="sudo yum install -y"
 )
 
 # Package check commands mapping
 declare -rA PKG_CHECK_CMDS=(
-   [apt]="dpkg -l"
-   [dnf]="rpm -q"
-   [yum]="rpm -q"
-   [pacman]="pacman -Qi"
-   [brew]="brew list"
-   [xbps]="xbps-query -l | grep -q"
    [apk]="apk info -e"
+   [apt]="dpkg -l"
+   [brew]="brew list"
+   [dnf]="rpm -q"
+   [pacman]="pacman -Qi"
+   [termux]="dpkg -l"
+   [xbps]="xbps-query -l | grep -q"
+   [yum]="rpm -q"
 )
 
-# Global counters
-declare -i installed_count=0
-declare -i missing_count=0
+# --- _logging functions ---
+_log() {
+   local ARG="$1"
+   [ "${#@}" -gt 2 ] && shift
+   local MESSAGE=("$@")
 
-# --- Logging functions ---
-log() {
-   local TYPE="$1"
-   shift
-   local MESSAGE="$*"
-
-   case "$TYPE" in
-   -i | -info)
-      printf "${BLUE}[i]${NC} %s\n" "$MESSAGE"
+   case "$ARG" in
+   -i | info)
+      printf "${BLUE}[i]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
       ;;
-   -s | -succes)
-      printf "${GREEN}[✔]${NC} %s\n" "$MESSAGE"
+   -s | succes)
+      printf "${GREEN}[✔]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
       ;;
-   -w | -warning)
-      printf "${YELLOW}[!]${NC} %s\n" "$MESSAGE"
+   -w | warning)
+      printf "${YELLOW}[?]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
       ;;
-   -e | -error)
-      printf "${RED}[?]${NC} %s\n" "$MESSAGE" >&2 # Output error to stderr
+   -e | error)
+      printf "${RED}[!]${NC} %s\n" "${MESSAGE[1]}" >&2
       ;;
-   -t | -step)
-      printf "\n${BOLD}${CYAN}=== %s ===${NC}\n" "$MESSAGE"
+   -t | step)
+      printf "\n${CYAN}[-]${NC} ${BOLD}%s${NC}\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -f | format)
+      printf "${MESSAGE[@]}" >/dev/tty
       ;;
    *)
-      # Use a standard error log if you have one, or just echo to stderr
-      printf "${RED}[!]${NC} Invalid log argument: '%s'\n" "$TYPE" >&2
+      printf "%b\n" "${MESSAGE[@]}" >/dev/tty
       return 1
       ;;
    esac
@@ -95,18 +91,18 @@ detect_package_manager() {
 
 # --- Check if a package is installed ---
 is_installed() {
-   local package="$1"
-   local pkg_manager="$2"
+   local pkg_manager="$1"
+   local package="$2"
    local check_cmd="${PKG_CHECK_CMDS[$pkg_manager]:-}"
 
    [[ -z "$check_cmd" ]] && return 1
 
    case "$pkg_manager" in
    xbps)
-      $check_cmd " $package-[0-9]" &>/dev/null
+      $check_cmd " ${package}-[0-9]" &>/dev/null
       ;;
    *)
-      $check_cmd "$package" &>/dev/null
+      $check_cmd "${package}" &>/dev/null
       ;;
    esac
 }
@@ -114,11 +110,9 @@ is_installed() {
 # --- Enhanced spinner with better animation ---
 spinner() {
    local pid=$1
-   # local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
    local spinstr='◧◩⬒⬔◨◪⬓⬕'
    local i=0
-   echo "$pid"
-   # Hide the cursor and save its position
+
    tput civis
    tput sc
 
@@ -131,145 +125,140 @@ spinner() {
 
    # Restore the cursor
    tput cnorm
-   tput rc    # Restore to the last saved position
-   printf " " # Clear the last spinner character
+   tput rc   # Restore to the last saved position
+   printf "" # Clear the last spinner character
 }
 
 # --- Install a package with enhanced error handling ---
 install_package() {
-   local package="$1"
-   local pkg_manager="$2"
-   local install_cmd
+   local pkg_manager="$1"
+   local package="$2"
 
    # Check if the package manager is supported
    if [[ -z "${PKG_INSTALL_CMDS[$pkg_manager]}" ]]; then
-      printf "Unknown package manager: %s\n" "$pkg_manager" >&2
+      _log -e "Unknown package manager: %s\n" "$pkg_manager" >&2
       return 1
    fi
+
+   local install_cmd
    install_cmd="${PKG_INSTALL_CMDS[$pkg_manager]}"
+   _log -i "Installing %s with %s " "$package" "$pkg_manager"
 
-   printf "Installing %s with %s..." "$package" "$pkg_manager"
-
-   # Create temporary log file and ensure it's deleted on exit
-   local temp_log
-   temp_log=$(mktemp)
-   trap 'rm -f "$temp_log"' RETURN
+   # Create temporary _log file and ensure it's deleted on exit
+   local temp__log
+   temp__log=$(mktemp)
+   trap 'rm -f "$temp__log"' RETURN
 
    # Execute the installation command in the background
    # Note: Using `eval` is generally discouraged but necessary here for command expansion.
    # We carefully construct the command to minimize risk.
-   eval "$install_cmd \"$package\" &>\"$temp_log\"" &
+   eval "$install_cmd '$package' &>'$temp__log'" &
    local install_pid=$!
 
    spinner "$install_pid"
 
    # Wait for the background process to finish and check its exit status
    if wait "$install_pid"; then
-      printf "\rInstallation of %s: ✅ Success\n" "$package"
+      _log -s "Success"
       return 0
    else
-      printf "\rInstallation of %s: ❌ Failed\n" "$package"
-      printf "--- Installation Log ---\n" >&2
-      tail -n 10 "$temp_log" >&2 # Show the last 10 lines of the log
-      printf "------------------------\n" >&2
+      _log -e "Failed"
+      _log "Installation log" >&2
+      tail -n 10 "$temp__log" >&2 # Show the last 10 lines of the _log
+      ((missing_count++))
+      _log "---"
       return 1
    fi
 }
 
 # --- Display package status table ---
 display_package_table() {
-   local packages=("$@")
    local pkg_manager="$1"
    shift
+   local packages=("$@")
 
-   echo "${YELLOW}${BOLD} NO  PACKAGE          STATUS${NC}"
-   printf "┌────┬────────────────┬───────────────┐\n"
+   _log -f "${BLUE}${BOLD} %3s %-15s %s${NC}\n" "No." "Package" "Status"
 
    local counter=1
    local missing_packages=()
-
    for package in "${packages[@]}"; do
-      printf "│%3d │ %-14s │" "$counter" "$package"
+      _log -f "%3d  %-14s " "$counter" "$package"
 
-      if is_installed "$package" "$pkg_manager"; then
-         printf "${GREEN}%-${TAB_SIZE}s${NC}│\n" " ✓ installed"
-         ((installed_count++))
+      if is_installed "$pkg_manager" "$package"; then
+         _log -f "${GREEN}%-15s${NC}\n" " ✓ installed"
       else
-         printf "${RED}%-${TAB_SIZE}s${NC}│\n" " ✗ not installed"
-         ((missing_count++))
+         _log -f "${RED}%-15s${NC}\n" " ✗ not installed"
          missing_packages+=("$package")
       fi
       ((counter++))
    done
-
-   printf "└────┴────────────────┴───────────────┘\n"
-   echo "${missing_packages[@]}" # Return missing packages
+   echo "${missing_packages[@]}"
 }
 
 # --- Interactive package installation ---
 install_missing_packages() {
-   local missing_packages=("$@")
    local pkg_manager="$1"
    shift
+   local missing_packages=("$@")
    local failed_packages=()
    local choice
 
-   [[ ${#missing_packages[@]} -eq 0 ]] && return 0
+   [[ ${#missing_packages[@]} -eq 0 ]] && return 1
 
-   printf "\n${YELLOW}Missing packages: ${NC}%s\n" "${missing_packages[*]}"
+   _log -i "Missing packages: ${missing_packages[*]}"
 
    # Enhanced prompt with better options
    while true; do
-      echo -e "${BOLD}Choose an option:${NC}"
-      echo -e "  ${GREEN}[a]${NC} Install all missing packages"
-      echo -e "  ${YELLOW}[s]${NC} Select packages to install"
-      echo -e "  ${RED}[n]${NC} Skip installation"
-      printf "Choice [a/s/n]: "
+      _log -i "Choose an option:"
+      _log "   [a] Install all missing packages"
+      _log "   [s] Select packages to install"
+      _log "   [n] Skip installation"
+      _log -f "%s" "Choice [a/s/n]: "
       read -r choice
 
       case "${choice,,}" in
       a | all)
-         log -i "Installing all missing packages..."
+         _log -i "Installing all missing packages..."
          for package in "${missing_packages[@]}"; do
-            install_package "$package" "$pkg_manager" || failed_packages+=("$package")
+            install_package "$pkg_manager" "$package" || failed_packages+=("$package")
          done
          break
          ;;
       s | select)
-         log -i "Select packages to install (space-separated numbers):"
+         _log -i "Select packages to install (space-separated numbers):"
          for i in "${!missing_packages[@]}"; do
-            printf "  [%d] %s\n" "$((i + 1))" "${missing_packages[i]}"
+            _log -f "  [%d] %s\n" "$((i + 1))" "${missing_packages[i]}"
          done
-         printf "Enter numbers: "
+         _log -f "%s" "Enter numbers: "
          read -ra selections
 
          for selection in "${selections[@]}"; do
             if [[ "$selection" =~ ^[0-9]+$ ]] && ((selection >= 1 && selection <= ${#missing_packages[@]})); then
                local pkg="${missing_packages[$((selection - 1))]}"
-               install_package "$pkg" "$pkg_manager" || failed_packages+=("$pkg")
+               install_package "$pkg_manager" "$pkg" || failed_packages+=("$pkg")
             fi
          done
          break
          ;;
       n | no | skip)
-         log -w "Skipping package installation"
+         _log -w "Skipping package installation"
          failed_packages=("${missing_packages[@]}")
          break
          ;;
       *)
-         log -e "Invalid choice. Please enter 'a', 's', or 'n'."
+         _log -e "Invalid choice. Please enter 'a', 's', or 'n'."
          ;;
       esac
    done
 
-   echo "${failed_packages[@]}" # Return failed packages
+   echo "${failed_packages[@]}"
 }
 
 # --- Main function ---
-check_and_install_packages() {
+main() {
    [[ $# -eq 0 ]] && {
-      log -e "No packages specified"
-      printf "Usage: %s <PACKAGE1> [package2] [...]\n" "${0##*/}"
+      _log -e "No packages specified"
+      printf "Usage: %s [PACKAGE1] [PACKAGE2] [...]\n" "${0##*/}"
       exit 1
    }
 
@@ -277,66 +266,35 @@ check_and_install_packages() {
    pkg_manager=$(detect_package_manager)
 
    [[ "$pkg_manager" == "unknown" ]] && {
-      log -e "No supported package manager found"
-      log -i "Supported package managers: apt, dnf, yum, pacman, brew, xbp, apk"
+      _log -e "No supported package manager found"
+      _log -i "Supported package managers: apt, dnf, yum, pacman, brew, xbp, apk"
       exit 1
    }
 
-   log -i "Using $pkg_manager package manager"
+   _log -t "Using $pkg_manager package manager"
 
    # Display package status and get missing packages
    local missing_packages
-   missing_packages=$(display_package_table "$pkg_manager" "$@")
-   read -ra missing_array <<<"$missing_packages"
+   missing_packages=("$(display_package_table "$pkg_manager" "$@")")
 
    # Install missing packages if any
    local failed_packages
-   failed_packages=$(install_missing_packages "$pkg_manager" "${missing_array[@]}")
-   read -ra failed_array <<<"$failed_packages"
+   failed_packages=$(install_missing_packages "$pkg_manager" "${missing_packages[@]}")
 
    # Final summary
-   echo "${BOLD}=== INSTALLATION SUMMARY ===${NC}"
-   log -s "Successfully installed or already present: $installed_count/$#"
+   _log -t "INSTALLATION SUMMARY"
+   _log -s "$(($# - ${#missing_count[@]}))/$# Packages installed or already present"
 
-   if [[ ${#failed_array[@]} -gt 0 && -n "${failed_array[0]}" ]]; then
-      log -w "Failed/skipped packages: ${failed_array[*]}"
+   if [[ ${#failed_packages[@]} -gt 0 ]]; then
+      _log -w "Failed/skipped packages: ${failed_packages[*]}"
       exit 1
    fi
 
-   log -s "All packages are now available!"
+   _log -s "All packages are now available!"
 }
 
 # --- Script execution ---
-main() {
-   # Handle script arguments
-   case "${1:-}" in
-   -h | --help)
-      printf "Package Installation Script\n\n"
-      printf "Usage: %s [OPTIONS] <package1> [package2] [...]\n\n" "${0##*/}"
-      printf "Options:\n"
-      printf "  -h, --help    Show this help message\n"
-      printf "  -v, --version Show version information\n\n"
-      printf "Examples:\n"
-      printf "  %s git curl wget\n" "${0##*/}"
-      printf "  %s python3 nodejs npm\n" "${0##*/}"
-      exit 0
-      ;;
-   -v | --version)
-      printf "Package Setup Script v2.0\n"
-      printf "Enhanced bash version with improved features\n"
-      exit 0
-      ;;
-   -*)
-      log -e "Unknown option: $1"
-      printf "Use -h or --help for usage information\n"
-      exit 1
-      ;;
-   esac
-
-   check_and_install_packages "$@"
-}
-
 # Execute main function if script is run directly
-# if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-# main "$@"
-# fi
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+   main "$@"
+fi

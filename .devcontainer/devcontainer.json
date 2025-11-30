@@ -2,11 +2,5 @@
 	"name": "Void Linux",
 	"build": {
 		"dockerfile": "./Dockerfile"
-	},
-	"features": {
-		"ghcr.io/devcontainers/features/github-cli:1": {
-			"installDirectlyFromGitHubRelease": true,
-			"version": "latest"
-		}
 	}
 }

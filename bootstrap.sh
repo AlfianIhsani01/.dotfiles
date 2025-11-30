@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env bash
+#!/usr/bin/env bash
 
 # ------------------------------------------------------------------------------
 # Dotfiles Setup Script
@@ -31,7 +31,7 @@ validate_dotfiles() {
    return 0
 }
 
-# --- Download dotfiles with retry logic ---
+# --- Download dotfiles with retry _logic ---
 check_dotfiles() {
    local attempt=0
 
@@ -102,104 +102,65 @@ source_dotfiles_script() {
    local script_name="${script_path##*/}"
 
    if [[ -f "$DF_HOME/$script_path" ]]; then
-      log -i "Sourcing $script_name..."
+      echo "Sourcing $script_name..."
       # shellcheck source=/dev/null
       source "$DF_HOME/$script_path"
       return 0
    else
-      log -w "$script_name not found at $DF_HOME/$script_path"
+      echo -w "$script_name not found at $DF_HOME/$script_path"
       return 1
    fi
 }
 
 # --- Install packages from dotfiles configuration ---
 install_packages() {
-   log -t "Installing Packages"
+   _log -t "Installing Packages"
 
    # Source package lists
    if [[ ${#PACKAGES[@]} -gt 0 ]]; then
       for pkg in "${PACKAGES[@]}"; do
          local packages
 
-         log -i "Installing $pkg"
+         _log -i "Installing $pkg"
          if command -v check_and_install_packages &>/dev/null; then
             check_and_install_packages "${packages[@]}"
          else
-            log -w "check_and_install_packages function not available"
+            _log -w "check_and_install_packages function not available"
          fi
       done
    else
-      log -w "Package list not found, skipping package installation"
+      _log -w "Package list not found, skipping package installation"
    fi
 }
 
 # --- Deploy dotfiles using stow ---
 deploy_dotfiles() {
-   log -t "Deploying Dotfiles"
+   _log -t "Deploying Dotfiles"
 
    if source_dotfiles_script "script/stow.sh"; then
       if command -v deploy &>/dev/null; then
-         log -i "Deploying dotfiles with stow..."
+         _log -i "Deploying dotfiles with stow..."
          deploy
-         log -s "Dotfiles deployed successfully"
+         _log -s "Dotfiles deployed successfully"
       else
-         log -w "Deploy function not found in symlink.sh"
+         _log -w "Deploy function not found in symlink.sh"
       fi
    else
-      log -w "stow script not found, skipping dotfile deployment"
+      _log -w "stow script not found, skipping dotfile deployment"
    fi
 }
 
 # --- Configure Termux-specific settings ---
 configure_termux() {
    if [[ -n "${TERMUX_VERSION:-}" ]] || [[ "$PREFIX" == *"com.termux"* ]]; then
-      log -t "Configuring Termux"
+      _log -t "Configuring Termux"
 
       if source_dotfiles_script "script/termux.sh"; then
-         log -s "Termux configuration completed"
+         _log -s "Termux configuration completed"
       else
-         log -w "Termux script not found, skipping Termux-specific configuration"
+         _log -w "Termux script not found, skipping Termux-specific configuration"
       fi
    fi
-}
-
-# --- Main setup function ---
-main_setup() {
-   local packages=("$@")
-
-   echo "Starting Dotfiles Setup"
-
-   # Download dotfiles if needed
-   if ! check_dotfiles; then
-      echo "Failed to obtain dotfiles"
-      exit 1
-   fi
-
-   # Source function definitions
-   if ! source_dotfiles_script "script/main.sh"; then
-      log -w "main script not found, using fallback methods"
-   fi
-
-   # Install packages
-   if [[ ${#packages[@]} -gt 0 ]] && [[ $skip_packages == "false" ]]; then
-      log -i "Installing user-specified packages: ${packages[*]}"
-      if command -v check_and_install_packages &>/dev/null; then
-         check_and_install_packages "${packages[@]}"
-      else
-         log -w "Package installation function not available"
-      fi
-   else
-      install_packages
-   fi
-
-   # Deploy dotfiles
-   deploy_dotfiles
-
-   # Configure Termux if applicable
-   configure_termux
-
-   log -s "Dotfiles setup completed successfully!"
-   log -i "You may need to restart your terminal or log out/in for all changes to take effect"
 }
 
 prompt_yes_no() {
@@ -215,37 +176,75 @@ prompt_yes_no() {
       case "${response,,}" in
       y | yes) return 0 ;;
       n | no) return 1 ;;
-      *) log -w "Please answer 'y' or 'n'" ;;
+      *) echo "Please answer 'y' or 'n'" ;;
       esac
    done
 }
 # --- Help function ---
 show_help() {
    echo -e "
-${BOLD}Dotfiles Setup Script${NC}
+Dotfiles Setup Script
 
-${BOLD}USAGE:${NC}
+USAGE:
     $SCRIPT_NAME [OPTIONS] [PACKAGES...]
 
-${BOLD}DESCRIPTION:${NC}
+DESCRIPTION:
     Downloads and configures dotfiles from GitHub repository.
     Installs specified packages and sets up the development environment.
 
-${BOLD}OPTIONS:${NC}
+OPTIONS:
     -h, --help      Show this help message
     -v, --version   Show version information
     --no-packages   Skip package installation
     --no-shell      Skip shell configuration
     --force         Force re-download of dotfiles
 
-${BOLD}EXAMPLES:${NC}
+EXAMPLES:
     $SCRIPT_NAME                    # Setup with default packages
     $SCRIPT_NAME git vim tmux       # Setup with specific packages
     $SCRIPT_NAME --no-packages      # Setup without installing packages
 
-${BOLD}REPOSITORY:${NC}
+REPOSITORY:
     $DF_URL
 "
+}
+
+# --- Main setup function ---
+main_setup() {
+   local packages=("$@")
+   [[ ${#packages[@]} -eq 0 ]] && packages=("${PACKAGES[@]}")
+   echo "Starting Dotfiles Setup"
+
+   # Download dotfiles if needed
+   if ! check_dotfiles; then
+      echo "Failed to obtain dotfiles"
+      exit 1
+   fi
+   # Source function definitions
+   if ! source_dotfiles_script "script/main.sh"; then
+      echo "Main script not found, using fallback methods"
+   fi
+
+   # Install packages
+   if [[ ${#packages[@]} -gt 0 ]] && [[ $skip_packages == "false" ]]; then
+      _log -i "Installing user-specified packages: ${packages[*]}"
+      if command -v check_and_install_packages &>/dev/null; then
+         check_and_install_packages "${packages[@]}"
+      else
+         _log -w "Package installation function not available"
+      fi
+   else
+      install_packages
+   fi
+
+   # Deploy dotfiles
+   deploy_dotfiles
+
+   # Configure Termux if applicable
+   configure_termux
+
+   _log -s "Dotfiles setup completed successfully!"
+   _log -i "You may need to restart your terminal or _log out/in for all changes to take effect"
 }
 
 # --- Main execution ---
@@ -282,8 +281,8 @@ main() {
          ;;
       *)
          packages+=("$1")
-         main_setup
          shift
+         main_setup
          ;;
       esac
    done

@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Configuration with defaults
-SSHD_PORT="${SSHD_PORT:-2222}"
-USERNAME="${USERNAME:-automatic}"
-USER_UID="${USER_UID:-automatic}"
-USER_GID="${USER_GID:-automatic}"
-START_SSHD="${START_SSHD:-true}"
-NEW_PASSWORD="${NEW_PASSWORD:-skip}"
+SSHD_PORT="2222"
+USERNAME="akal"
+USER_UID="automatic"
+USER_GID="automatic"
+START_SSHD=true
+NEW_PASSWORD="skip"
 
 set -e
 
@@ -58,14 +58,14 @@ setup_user() {
       fi
    else
       # Create new user
-      local gid_arg=""
-      local uid_arg=""
+      local gid_arg="1000"
+      local uid_arg="1000"
 
       [ "$USER_GID" != "automatic" ] && gid_arg="--gid $USER_GID"
       [ "$USER_UID" != "automatic" ] && uid_arg="--uid $USER_UID"
 
-      groupadd "$gid_arg" "$USERNAME"
-      useradd -s /bin/bash "$uid_arg" --gid "$USERNAME" -m "$USERNAME"
+      groupadd -g "$gid_arg" "$USERNAME"
+      useradd -s /bin/bash -u "$uid_arg" --gid "$USERNAME" -m "$USERNAME"
    fi
 
    # Setup sudo for non-root users
@@ -117,7 +117,6 @@ setup_ssh_group() {
 
 # Configure SSH daemon
 configure_sshd() {
-   mkdir -p /var/run/sshd
 
    # Apply SSH configuration changes
    sed -i \
@@ -147,18 +146,11 @@ sudoIf() {
 
 # Start SSH server - detect init system
 start_ssh_service() {
-    if command -v sv >/dev/null 2>&1; then
-        # Void Linux / runit
-        sudoIf sv up sshd 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
-    elif [ -f /etc/init.d/ssh ]; then 
-        # SysV init
-        sudoIf /etc/init.d/ssh start 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
-    elif command -v systemctl >/dev/null 2>&1; then
-        # systemd
-        sudoIf systemctl start sshd 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
-    else
-        echo "Could not detect init system to start SSH service" >&2
-        exit 1
+     if command -v sshd >/dev/null 2>&1 && command -v which >/dev/null 2>&1; then
+        sshdCmd=$(which sshd)
+        sudoIf $sshdCmd -D -e 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
+     else
+        echo "Could't start sshd"
     fi
 }
 
@@ -181,7 +173,7 @@ main() {
    create_ssh_init_script
 
    # Start SSH daemon if requested
-   [ "$START_SSHD" = "true" ] && /usr/local/share/ssh-init.sh
+   [ "$START_SSHD" = true ] && /usr/local/share/ssh-init.sh
 
    # Output results
    log "Done!\n"
