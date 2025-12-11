@@ -7,16 +7,6 @@
 # Improved bash version with enhanced features
 # ------------------------------------------------------------------------------
 
-# Colors for output
-declare -r RED="\033[0;31m"
-declare -r GREEN="\033[0;32m"
-declare -r YELLOW="\033[0;33m"
-declare -r BLUE="\033[0;34m"
-declare -r CYAN="\033[0;36m"
-declare -r BOLD="\033[1m"
-# declare -r DIM="\033[2m"
-declare -r NC="\033[0m"
-
 # Package manager commands mapping
 declare -rA PKG_INSTALL_CMDS=(
    [apk]="sudo apk add"
@@ -40,38 +30,6 @@ declare -rA PKG_CHECK_CMDS=(
    [xbps]="xbps-query -l | grep -q"
    [yum]="rpm -q"
 )
-
-# --- _logging functions ---
-_log() {
-   local ARG="$1"
-   [ "${#@}" -gt 2 ] && shift
-   local MESSAGE=("$@")
-
-   case "$ARG" in
-   -i | info)
-      printf "${BLUE}[i]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
-      ;;
-   -s | succes)
-      printf "${GREEN}[✔]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
-      ;;
-   -w | warning)
-      printf "${YELLOW}[?]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
-      ;;
-   -e | error)
-      printf "${RED}[!]${NC} %s\n" "${MESSAGE[1]}" >&2
-      ;;
-   -t | step)
-      printf "\n${CYAN}[-]${NC} ${BOLD}%s${NC}\n" "${MESSAGE[1]}" >/dev/tty
-      ;;
-   -f | format)
-      printf "${MESSAGE[@]}" >/dev/tty
-      ;;
-   *)
-      printf "%b\n" "${MESSAGE[@]}" >/dev/tty
-      return 1
-      ;;
-   esac
-}
 
 # --- Package Manager Detection ---
 detect_package_manager() {
@@ -173,10 +131,17 @@ install_package() {
 
 # --- Display package status table ---
 display_package_table() {
-   local pkg_manager="$1"
+   local check_cmd="$1"
+   shift
+   local massages="${2:-"true/false"}"
    shift
    local packages=("$@")
-
+   if [[ $massages == *"/"* ]]; then
+      msg_true="${massages/*\//}"
+      msg_false="${massages/\/*/}"
+   else
+      _log -w "expecting massages to use slash separated value"
+   fi
    _log -f "${BLUE}${BOLD} %3s %-15s %s${NC}\n" "No." "Package" "Status"
 
    local counter=1
@@ -184,10 +149,10 @@ display_package_table() {
    for package in "${packages[@]}"; do
       _log -f "%3d  %-14s " "$counter" "$package"
 
-      if is_installed "$pkg_manager" "$package"; then
-         _log -f "${GREEN}%-15s${NC}\n" " ✓ installed"
+      if $check_cmd "$package"; then
+         _log -f "${GREEN}%-15s${NC}\n" "$msg_true"
       else
-         _log -f "${RED}%-15s${NC}\n" " ✗ not installed"
+         _log -f "${RED}%-15s${NC}\n" "$msg_false"
          missing_packages+=("$package")
       fi
       ((counter++))
@@ -255,7 +220,7 @@ install_missing_packages() {
 }
 
 # --- Main function ---
-main() {
+check_n_install() {
    [[ $# -eq 0 ]] && {
       _log -e "No packages specified"
       printf "Usage: %s [PACKAGE1] [PACKAGE2] [...]\n" "${0##*/}"
@@ -275,7 +240,7 @@ main() {
 
    # Display package status and get missing packages
    local missing_packages
-   missing_packages=("$(display_package_table "$pkg_manager" "$@")")
+   missing_packages=("$(display_package_table "is_installed $pkg_manager" "$@")")
 
    # Install missing packages if any
    local failed_packages
@@ -296,5 +261,5 @@ main() {
 # --- Script execution ---
 # Execute main function if script is run directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-   main "$@"
+   check_n_install "$@"
 fi

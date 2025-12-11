@@ -1,27 +1,75 @@
 #!/usr/bin/env bash
 
 # ------------------------------------------------------------------------------
-# Dotfiles Setup Script
+# Dotfiles Management Script
 # Downloads and configures dotfiles with package installation
-# Enhanced bash version with improved error handling and user experience
 # ------------------------------------------------------------------------------
 
 set -euo pipefail
 
 # Packages
-declare -rA PACKAGES=(
+declare -gA PACKAGES=(
    [1]="neovim"
    [2]="fzf"
    [3]="tmux"
-   [4]="stow"
+   [4]="kakoune"
    [5]="git"
 )
 
+# Dotfiles Packages
+declare -gA CONF_PACK=(
+   # Packages, Target path
+   [termux]="$HOME"
+   [configs]="$XDG_CONFIG_HOME"
+)
+
 # Configuration
-declare -r DF_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
-declare -r DF_HOME="${HOME}/.dotfiles"
-declare -r SCRIPT_NAME="${0##*/}"
-declare -r MAX_ATTEMPTS=2
+declare DF_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
+declare DF_HOME="${HOME}/.dotfiles"
+declare SCRIPT_NAME="${0##*/}"
+declare MAX_ATTEMPTS=2
+
+# Colors for output
+declare -r RED="\033[0;31m"
+declare -r GREEN="\033[0;32m"
+declare -r YELLOW="\033[0;33m"
+declare -r BLUE="\033[0;34m"
+declare -r CYAN="\033[0;36m"
+declare -r BOLD="\033[1m"
+# declare -r DIM="\033[2m"
+declare -r NC="\033[0m"
+
+# --- _logging functions ---
+_log() {
+   local ARG="$1"
+   [ "${#@}" -gt 2 ] && shift
+   local MESSAGE=("$@")
+
+   case "$ARG" in
+   -i | info)
+      printf "${BLUE}[i]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -s | succes)
+      printf "${GREEN}[✔]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -w | warning)
+      printf "${YELLOW}[?]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -e | error)
+      printf "${RED}[!]${NC} %s\n" "${MESSAGE[1]}" >&2
+      ;;
+   -t | step)
+      printf "${CYAN}[-]${NC} ${BOLD}%s${NC}\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -f | format)
+      printf "${MESSAGE[@]}" >/dev/tty
+      ;;
+   *)
+      printf "%b\n" "${MESSAGE[@]}" >/dev/tty
+      return 1
+      ;;
+   esac
+}
 
 # --- Check if dotfiles exist and are valid ---
 validate_dotfiles() {
@@ -35,18 +83,18 @@ validate_dotfiles() {
 check_dotfiles() {
    local attempt=0
 
-   echo "Checking Dotfiles"
+   _log -s "Checking Dotfiles"
 
    while ((attempt <= MAX_ATTEMPTS)); do
-      echo "Checking for dotfiles at $DF_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
+      _log "Checking for dotfiles at $DF_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
 
       if validate_dotfiles; then
-         echo "Dotfiles found and validated at $DF_HOME"
+         _log -s "Dotfiles found and validated at $DF_HOME"
          export DF_HOME
          return 0
       fi
 
-      echo "Dotfiles not found or invalid"
+      _log -w "Dotfiles not found or invalid"
 
       if ((attempt == MAX_ATTEMPTS)); then
          echo "Maximum attempts reached"
@@ -65,27 +113,27 @@ check_dotfiles() {
             elif command -v dnf &>/dev/null; then
                sudo dnf install -y git
             else
-               echo "Cannot install git automatically. Please install git manually."
+               _log -e "Cannot install git automatically. Please install git manually."
                return 1
             fi
          fi
 
-         echo "Cloning dotfiles repository..."
+         _log -i "Cloning dotfiles repository..."
          if [[ -d "$DF_HOME" ]]; then
-            echo "Removing existing incomplete dotfiles directory"
+            _log -i "Removing existing incomplete dotfiles directory"
             rm -rf "$DF_HOME"
          fi
 
          if git clone --depth 1 "$DF_URL" "$DF_HOME"; then
-            echo "Dotfiles cloned successfully"
+            _log -s "Dotfiles cloned successfully"
             export DF_HOME
          else
-            echo "Failed to clone dotfiles repository"
+            _log -e "Failed to clone dotfiles repository"
             ((attempt++))
             continue
          fi
       else
-         echo "Cannot proceed without dotfiles"
+         _log -e "Cannot proceed without dotfiles"
          return 1
       fi
 
@@ -102,12 +150,12 @@ source_dotfiles_script() {
    local script_name="${script_path##*/}"
 
    if [[ -f "$DF_HOME/$script_path" ]]; then
-      echo "Sourcing $script_name..."
+      _log -i "Sourcing $script_name..."
       # shellcheck source=/dev/null
       source "$DF_HOME/$script_path"
       return 0
    else
-      echo -w "$script_name not found at $DF_HOME/$script_path"
+      _log -w "$script_name not found at $DF_HOME/$script_path"
       return 1
    fi
 }
@@ -122,10 +170,10 @@ install_packages() {
          local packages
 
          _log -i "Installing $pkg"
-         if command -v check_and_install_packages &>/dev/null; then
-            check_and_install_packages "${packages[@]}"
+         if command -v check_n_install &>/dev/null; then
+            check_n_install "${packages[@]}"
          else
-            _log -w "check_and_install_packages function not available"
+            _log -w "check_n_install function not available"
          fi
       done
    else
@@ -133,20 +181,20 @@ install_packages() {
    fi
 }
 
-# --- Deploy dotfiles using stow ---
+# --- Deploy dotfiles ---
 deploy_dotfiles() {
    _log -t "Deploying Dotfiles"
 
-   if source_dotfiles_script "script/stow.sh"; then
+   if source_dotfiles_script "script/manage.sh"; then
       if command -v deploy &>/dev/null; then
-         _log -i "Deploying dotfiles with stow..."
-         deploy
+         _log -i "Deploying dotfiles..."
+         deploy "${CONF_PACK[@]}"
          _log -s "Dotfiles deployed successfully"
       else
          _log -w "Deploy function not found in symlink.sh"
       fi
    else
-      _log -w "stow script not found, skipping dotfile deployment"
+      _log -w "Manage script not found, skipping dotfile deployment"
    fi
 }
 
@@ -183,7 +231,7 @@ prompt_yes_no() {
 # --- Help function ---
 show_help() {
    echo -e "
-Dotfiles Setup Script
+Dotfiles Management Script
 
 USAGE:
     $SCRIPT_NAME [OPTIONS] [PACKAGES...]
@@ -196,7 +244,6 @@ OPTIONS:
     -h, --help      Show this help message
     -v, --version   Show version information
     --no-packages   Skip package installation
-    --no-shell      Skip shell configuration
     --force         Force re-download of dotfiles
 
 EXAMPLES:
@@ -211,25 +258,30 @@ REPOSITORY:
 
 # --- Main setup function ---
 main_setup() {
+   local skip_packages="$1"
+   shift
    local packages=("$@")
-   [[ ${#packages[@]} -eq 0 ]] && packages=("${PACKAGES[@]}")
-   echo "Starting Dotfiles Setup"
+   [ ${#packages[@]} -eq 0 ] &&
+      [ ${#PACKAGES[@]} -eq 0 ] &&
+      packages=("${PACKAGES[@]}")
+
+   _log -t "Starting Dotfiles Setup"
 
    # Download dotfiles if needed
    if ! check_dotfiles; then
-      echo "Failed to obtain dotfiles"
+      _log -e "Failed to obtain dotfiles"
       exit 1
    fi
    # Source function definitions
-   if ! source_dotfiles_script "script/main.sh"; then
-      echo "Main script not found, using fallback methods"
+   if ! source_dotfiles_script "script/installer.sh"; then
+      _log -e "Main script not found"
    fi
 
    # Install packages
-   if [[ ${#packages[@]} -gt 0 ]] && [[ $skip_packages == "false" ]]; then
+   if [[ ${#packages[@]} -gt 0 ]] && [[ $skip_packages == false ]]; then
       _log -i "Installing user-specified packages: ${packages[*]}"
-      if command -v check_and_install_packages &>/dev/null; then
-         check_and_install_packages "${packages[@]}"
+      if command -v check_n_install &>/dev/null; then
+         check_n_install "${packages[@]}"
       else
          _log -w "Package installation function not available"
       fi
@@ -261,11 +313,6 @@ main() {
          show_help
          exit 0
          ;;
-      -v | --version)
-         printf "Dotfiles Setup Script v2.0\n"
-         printf "Enhanced bash version\n"
-         exit 0
-         ;;
       --no-packages)
          skip_packages=true
          shift
@@ -282,7 +329,6 @@ main() {
       *)
          packages+=("$1")
          shift
-         main_setup
          ;;
       esac
    done
@@ -295,7 +341,7 @@ main() {
 
    # Run setup based on how script was called
    if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-      main_setup "${packages[@]}"
+      main_setup "$skip_packages" "${packages[@]}"
    else
       echo "Script sourced, functions available for use"
    fi
@@ -305,4 +351,5 @@ main "$@"
 # if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 # main "$@"
 # fi
-unset -v SCRIPT_NAME DF_URL DF_HOME MAX_ATTEMPTS
+
+# unset -v SCRIPT_NAME DF_URL MAX_ATTEMPTS

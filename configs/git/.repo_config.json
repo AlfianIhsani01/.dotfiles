@@ -1,0 +1,166 @@
+{
+  "color.branch": [
+    "auto"
+  ],
+  "color.diff": [
+    "auto"
+  ],
+  "color.interactive": [
+    "auto"
+  ],
+  "color.status": [
+    "auto"
+  ],
+  "color.grep": [
+    "auto"
+  ],
+  "color.ui": [
+    "auto"
+  ],
+  "color.branch.current": [
+    "green"
+  ],
+  "color.branch.remote": [
+    "yellow"
+  ],
+  "core.pager": [
+    "sed 's/*/\u25cb/g' | bat -p --wrap=never"
+  ],
+  "core.editor": [
+    "nvim"
+  ],
+  "interactive.difffilter": [
+    "bat -d"
+  ],
+  "merge.conflictstyle": [
+    "zdiff3"
+  ],
+  "alias.co": [
+    "checkout"
+  ],
+  "alias.st": [
+    "status -sb",
+    "status"
+  ],
+  "alias.br": [
+    "branch",
+    "branch"
+  ],
+  "alias.ci": [
+    "commit"
+  ],
+  "alias.ca": [
+    "commit -a"
+  ],
+  "alias.fo": [
+    "fetch origin"
+  ],
+  "alias.d": [
+    "!git --no-pager diff"
+  ],
+  "alias.dt": [
+    "difftool"
+  ],
+  "alias.ps": [
+    "!git push origin $(git rev-parse --abbrev-ref HEAD)"
+  ],
+  "alias.pl": [
+    "!git pull origin $(git rev-parse --abbrev-ref HEAD)"
+  ],
+  "alias.ba": [
+    "branch -a"
+  ],
+  "alias.bm": [
+    "branch --merged"
+  ],
+  "alias.bn": [
+    "branch --no-merged"
+  ],
+  "alias.df": [
+    "!git hist | sed 's/*/\u25cb/g'| fzf | awk '{print $2}' | xargs -I {} git diff {}^ {}"
+  ],
+  "alias.stat": [
+    "!git --no-pager diff --stat"
+  ],
+  "alias.open": [
+    "!hub browse"
+  ],
+  "alias.type": [
+    "cat-file -t"
+  ],
+  "alias.dump": [
+    "cat-file -p"
+  ],
+  "alias.find": [
+    "!f() { git log --pretty=format:\"%h %cd [%cn] %s%d\" --date=relative -S'pretty' -S\"$@\" | fzf | awk '{print $1}' | xargs -I {} git diff {}^ {}; }; f"
+  ],
+  "alias.edit-unmerged": [
+    "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; vim `f`"
+  ],
+  "alias.add-unmerged": [
+    "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; git add `f`"
+  ],
+  "alias.remotesethead": [
+    "remote set-head origin --auto"
+  ],
+  "alias.defaultbranch": [
+    "!git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4"
+  ],
+  "alias.sweep": [
+    "!git branch --merged $(git defaultBranch) | grep -E -v  $(git defaultBranch)$ | xargs -r git branch -d && git remote prune origin"
+  ],
+  "alias.hist": [
+    "log --pretty=format:\"%Cgreen%h %Creset%cd %Cblue[%cn] %Creset%s%C(yellow)%d%C(reset)\" --graph --date=relative --decorate --all"
+  ],
+  "alias.lg": [
+    "log --graph --all --pretty=format:'%Cred%h%Creset - %s %Cgreen(%cr) %C(bold blue)%an%Creset %C(yellow)%d%Creset'"
+  ],
+  "alias.llog": [
+    "log --graph --name-status --pretty=format:\"%C(red)%h %C(reset)(%cd) %C(green)%an %Creset%s %C(yellow)%d%Creset\" --date=relative"
+  ],
+  "alias.m": [
+    "!git checkout $(git defaultBranch)"
+  ],
+  "alias.unstage": [
+    "reset HEAD --"
+  ],
+  "diff.tool": [
+    "nvimdiff"
+  ],
+  "difftool.nvimdiff.cmd": [
+    "nvim -d \"$LOCAL\" \"$REMOTE\""
+  ],
+  "difftool.nvimdiff.path": [
+    ""
+  ],
+  "mergetool.nvimdiff.cmd": [
+    "nvim -d \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\""
+  ],
+  "mergetool.nvimdiff.trustexitcode": [
+    "true"
+  ],
+  "help.autocorrect": [
+    "1"
+  ],
+  "push.default": [
+    "simple"
+  ],
+  "branch.master.mergeoptions": [
+    "--no-edit"
+  ],
+  "pull.rebase": [
+    "false"
+  ],
+  "init.defaultbranch": [
+    "master"
+  ],
+  "user.email": [
+    "ihsani.akmal.0@gmail.com"
+  ],
+  "user.name": [
+    "Akal"
+  ],
+  "safe.directory": [
+    "/storage/emulated/0/Projects/CustomFont"
+  ]
+}

@@ -9,16 +9,18 @@ export XDG_RUNTIME_DIR="$HOME/.local/tmp/runtime-$UID"
 export XDG_BIN_DIR="$HOME/.local/bin"
 
 export PATH="$PATH:${XDG_BIN_DIR:-$HOME/.local/bin}"
-export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share}/cargo/bin"
-export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin"
+export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share/cargo/bin}"
+export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share/nvim/mason/bin}"
+export PATH="$PATH:/system/bin"
 export PATH="$PATH:${HOME}/.deno/bin"
-export DFS_HOME="${HOME}/.dotfiles"
+
+export DF_HOME="${HOME}/.dotfiles"
 
 ## Nodejs
 export NPM_CONFIG_USERCONFIG="${XDG_CONFIG_HOME}/npm/npmrc"
 export NPM_CONFIG_CACHE="${XDG_CACHE_HOME}/npm"
 # export NPM_CONFIG_TMP="${XDG_RUNTIME_DIR}/npm"
-export NODE_REPL_HISTORY="${XDG_STATE_HOME}/node_repl_history"
+export NODE_REPL_HISTORY="${XDG_STATE_HOME}/node_history"
 
 ## other
 export SSH_CONFIG_DIR="${XDG_CONFIG_HOME}/ssh"
@@ -26,6 +28,7 @@ export GIT_CONFIG_GLOBAL="${XDG_CONFIG_HOME:-$HOME/.config}/git/config"
 export STARSHIP_CONFIG="${XDG_CONFIG_HOME}/starship/starship.toml"
 export CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
 
+export PYTHONHISTORY="${XDG_STATE_HOME:-$HOME/.local/state/python_history}"
 # export SHELDON_DATA_DIR="$XDG_DATA_HOME/sheldon"
 # export HELIX_RUNTIME="/data/data/com.termux/files/home/.config/helix/runtime"
 
@@ -45,3 +48,4 @@ __xdg_dirs() {
    unset -v xdg_dirs
 }
 __xdg_dirs
+unset -f __xdg_dirs
