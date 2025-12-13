@@ -14,7 +14,9 @@ declare -ra LN_OPTIONS=(
    "--symbolic"
    "--suffix=.bkp"
 )
-
+declare -ra MV_OPTIONS=(
+   "--verbose"
+)
 # Global counters
 declare -i deployed_count=0
 declare -i failed_count=0
@@ -124,7 +126,7 @@ add_package() {
 
    local cmd=(
       mv
-      "--verbose"
+      "${MV_OPTIONS[@]}"
       "${package_target[@]}"
       "$package_group"
    )

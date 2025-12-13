@@ -8,7 +8,7 @@
 # ------------------------------------------------------------------------------
 
 # Package manager commands mapping
-declare -rA PKG_INSTALL_CMDS=(
+declare -rgA PKG_INSTALL_CMDS=(
    [apk]="sudo apk add"
    [apt]="sudo apt-get install -y"
    [brew]="brew install"
@@ -20,7 +20,7 @@ declare -rA PKG_INSTALL_CMDS=(
 )
 
 # Package check commands mapping
-declare -rA PKG_CHECK_CMDS=(
+declare -rgA PKG_CHECK_CMDS=(
    [apk]="apk info -e"
    [apt]="dpkg -l"
    [brew]="brew list"
@@ -120,7 +120,7 @@ install_package() {
       _log -s "Success"
       return 0
    else
-      _log -e "Failed"
+      _log -w "Failed"
       _log "Installation log" >&2
       tail -n 10 "$temp__log" >&2 # Show the last 10 lines of the _log
       ((missing_count++))
@@ -132,30 +132,30 @@ install_package() {
 # --- Display package status table ---
 display_package_table() {
    local check_cmd="$1"
-   shift
-   local massages="${2:-"true/false"}"
-   shift
+   local messages="$2"
+   shift && shift
    local packages=("$@")
-   if [[ $massages == *"/"* ]]; then
-      msg_true="${massages/*\//}"
-      msg_false="${massages/\/*/}"
-   else
-      _log -w "expecting massages to use slash separated value"
-   fi
-   _log -f "${BLUE}${BOLD} %3s %-15s %s${NC}\n" "No." "Package" "Status"
 
-   local counter=1
+   if [[ $messages == *"/"* ]]; then
+      local msg_true="${messages/\/*/}"
+      local msg_false="${messages/*\//}"
+   else
+      _log -w "Expecting massages to use slash separated value"
+      return 1
+   fi
+
+   _log -f "${BLUE}${BOLD}%-18s %s${NC}\n" "Package" "Status"
+
    local missing_packages=()
    for package in "${packages[@]}"; do
-      _log -f "%3d  %-14s " "$counter" "$package"
+      _log -f "%-14s " "$package"
 
       if $check_cmd "$package"; then
-         _log -f "${GREEN}%-15s${NC}\n" "$msg_true"
+         _log "${GREEN}$msg_true${NC}"
       else
-         _log -f "${RED}%-15s${NC}\n" "$msg_false"
+         _log "${RED}$msg_false${NC}"
          missing_packages+=("$package")
       fi
-      ((counter++))
    done
    echo "${missing_packages[@]}"
 }
@@ -168,16 +168,15 @@ install_missing_packages() {
    local failed_packages=()
    local choice
 
-   [[ ${#missing_packages[@]} -eq 0 ]] && return 1
-
+   [[ ${#missing_packages[@]} -eq 0 ]] && return 0
    _log -i "Missing packages: ${missing_packages[*]}"
 
    # Enhanced prompt with better options
    while true; do
       _log -i "Choose an option:"
-      _log "   [a] Install all missing packages"
-      _log "   [s] Select packages to install"
-      _log "   [n] Skip installation"
+      _log -f "%s\n" "[a] Install all missing packages"
+      _log -f "%s\n" "[s] Select packages to install"
+      _log -f "%s\n" "[n] Skip installation"
       _log -f "%s" "Choice [a/s/n]: "
       read -r choice
 
@@ -215,7 +214,6 @@ install_missing_packages() {
          ;;
       esac
    done
-
    echo "${failed_packages[@]}"
 }
 
@@ -236,19 +234,21 @@ check_n_install() {
       exit 1
    }
 
-   _log -t "Using $pkg_manager package manager"
+   _log -i "Using $pkg_manager package manager"
 
    # Display package status and get missing packages
    local missing_packages
-   missing_packages=("$(display_package_table "is_installed $pkg_manager" "$@")")
+   read -ra missing_packages <<<"$(display_package_table "is_installed $pkg_manager" "installed/not installed" "$@")"
 
+   # echo "${missing_packages}"
    # Install missing packages if any
    local failed_packages
-   failed_packages=$(install_missing_packages "$pkg_manager" "${missing_packages[@]}")
+   read -ra failed_packages <<<"$(install_missing_packages "$pkg_manager" "${missing_packages[@]}")"
 
+   # echo "${failed_packages[@]}"
    # Final summary
    _log -t "INSTALLATION SUMMARY"
-   _log -s "$(($# - ${#missing_count[@]}))/$# Packages installed or already present"
+   _log -s "$(($# - ${#failed_packages[@]}))/$# Packages installed or already present"
 
    if [[ ${#failed_packages[@]} -gt 0 ]]; then
       _log -w "Failed/skipped packages: ${failed_packages[*]}"

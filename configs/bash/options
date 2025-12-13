@@ -5,3 +5,4 @@ shopt -s autocd
 shopt -s bash_source_fullpath
 shopt -s cdspell
 shopt -s dirspell
+# set -o vi

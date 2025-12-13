@@ -23,6 +23,7 @@
 [alias]
   co = checkout
   st = status -sb
+  sp = status --porcelain=v1 --branch
   br = branch
   ci = commit
   ca = commit -a

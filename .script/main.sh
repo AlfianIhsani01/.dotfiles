@@ -5,8 +5,6 @@
 # Downloads and configures dotfiles with package installation
 # ------------------------------------------------------------------------------
 
-set -euo pipefail
-
 # Packages
 declare -gA PACKAGES=(
    [1]="neovim"
@@ -14,19 +12,23 @@ declare -gA PACKAGES=(
    [3]="tmux"
    [4]="kakoune"
    [5]="git"
+   [6]="lsd"
+   [7]="bat"
+   [8]="zoxide"
+   [9]="fd"
+   [19]="ripgrep"
 )
 
 # Dotfiles Packages
 declare -gA CONF_PACK=(
    # Packages, Target path
    [termux]="$HOME"
-   [configs]="$XDG_CONFIG_HOME"
+   [configs]="$HOME/.config"
 )
 
 # Configuration
 declare DF_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
 declare DF_HOME="${HOME}/.dotfiles"
-declare SCRIPT_NAME="${0##*/}"
 declare MAX_ATTEMPTS=2
 
 # Colors for output
@@ -41,11 +43,11 @@ declare -r NC="\033[0m"
 
 # --- _logging functions ---
 _log() {
-   local ARG="$1"
+   local ARG=("$1")
    [ "${#@}" -gt 2 ] && shift
    local MESSAGE=("$@")
 
-   case "$ARG" in
+   case "${ARG[0]}" in
    -i | info)
       printf "${BLUE}[i]${NC} %s\n" "${MESSAGE[1]}" >/dev/tty
       ;;
@@ -62,10 +64,10 @@ _log() {
       printf "${CYAN}[-]${NC} ${BOLD}%s${NC}\n" "${MESSAGE[1]}" >/dev/tty
       ;;
    -f | format)
-      printf "${MESSAGE[@]}" >/dev/tty
+      printf "${MESSAGE[@]}" | sed "s/^/ |  /g" >/dev/tty
       ;;
    *)
-      printf "%b\n" "${MESSAGE[@]}" >/dev/tty
+      printf "    %b\n" "${MESSAGE[*]}" >/dev/tty
       return 1
       ;;
    esac
@@ -74,7 +76,7 @@ _log() {
 # --- Check if dotfiles exist and are valid ---
 validate_dotfiles() {
    [[ -d "$DF_HOME" ]] || return 1
-   [[ -f "$DF_HOME/$SCRIPT_NAME" ]] || return 1
+   [[ -d "$DF_HOME/.script" ]] || return 1
    [[ -d "$DF_HOME/.git" ]] || return 1
    return 0
 }
@@ -82,14 +84,11 @@ validate_dotfiles() {
 # --- Download dotfiles with retry _logic ---
 check_dotfiles() {
    local attempt=0
-
-   _log -s "Checking Dotfiles"
-
    while ((attempt <= MAX_ATTEMPTS)); do
-      _log "Checking for dotfiles at $DF_HOME (Attempt $attempt of $MAX_ATTEMPTS)"
+      _log -i "Checking for dotfiles at ${DF_HOME/$HOME/\~} (Attempt $attempt of $MAX_ATTEMPTS)"
 
       if validate_dotfiles; then
-         _log -s "Dotfiles found and validated at $DF_HOME"
+         _log -s "Dotfiles found and validated at ${DF_HOME/$HOME/\~}"
          export DF_HOME
          return 0
       fi
@@ -97,13 +96,13 @@ check_dotfiles() {
       _log -w "Dotfiles not found or invalid"
 
       if ((attempt == MAX_ATTEMPTS)); then
-         echo "Maximum attempts reached"
+         _log -e "Maximum attempts reached"
          return 1
       fi
 
       if prompt_yes_no "Clone dotfiles with Git?"; then
 
-         echo "Installing git if needed..."
+         _log -i "Installing git if needed..."
          if ! command -v git --version &>/dev/null; then
             # Fallback package installation
             if command -v apt-get &>/dev/null; then
@@ -146,8 +145,8 @@ check_dotfiles() {
 
 # --- Source dotfiles scripts safely ---
 source_dotfiles_script() {
-   local script_path="$1"
-   local script_name="${script_path##*/}"
+   local script_path=".script/$1"
+   local script_name="${1/.*/}"
 
    if [[ -f "$DF_HOME/$script_path" ]]; then
       _log -i "Sourcing $script_name..."
@@ -162,22 +161,22 @@ source_dotfiles_script() {
 
 # --- Install packages from dotfiles configuration ---
 install_packages() {
+   local packages=("${@:-${PACKAGES[@]}}")
    _log -t "Installing Packages"
-
    # Source package lists
-   if [[ ${#PACKAGES[@]} -gt 0 ]]; then
-      for pkg in "${PACKAGES[@]}"; do
-         local packages
-
-         _log -i "Installing $pkg"
-         if command -v check_n_install &>/dev/null; then
-            check_n_install "${packages[@]}"
-         else
-            _log -w "check_n_install function not available"
-         fi
-      done
+   if [[ ${#packages[@]} -gt 0 ]]; then
+      if ! source_dotfiles_script "installer.sh"; then
+         _log -e "Main script not found"
+         return 1
+      fi
+      if command -v check_n_install &>/dev/null; then
+         check_n_install "${packages[@]}"
+      else
+         _log -w "check_n_install function not available"
+      fi
    else
-      _log -w "Package list not found, skipping package installation"
+      _log -w "No package(s) specified/configured, skipping package installation"
+      return 1
    fi
 }
 
@@ -185,7 +184,7 @@ install_packages() {
 deploy_dotfiles() {
    _log -t "Deploying Dotfiles"
 
-   if source_dotfiles_script "script/manage.sh"; then
+   if source_dotfiles_script "manage.sh"; then
       if command -v deploy &>/dev/null; then
          _log -i "Deploying dotfiles..."
          deploy "${CONF_PACK[@]}"
@@ -203,7 +202,7 @@ configure_termux() {
    if [[ -n "${TERMUX_VERSION:-}" ]] || [[ "$PREFIX" == *"com.termux"* ]]; then
       _log -t "Configuring Termux"
 
-      if source_dotfiles_script "script/termux.sh"; then
+      if source_dotfiles_script "termux.sh"; then
          _log -s "Termux configuration completed"
       else
          _log -w "Termux script not found, skipping Termux-specific configuration"
@@ -233,25 +232,24 @@ show_help() {
    echo -e "
 Dotfiles Management Script
 
-USAGE:
-    $SCRIPT_NAME [OPTIONS] [PACKAGES...]
+${BOLD}USAGE:${NC}
+    dms [OPTIONS] [PACKAGES...]
 
-DESCRIPTION:
+${BOLD}DESCRIPTION:${NC}
     Downloads and configures dotfiles from GitHub repository.
     Installs specified packages and sets up the development environment.
 
-OPTIONS:
+${BOLD}OPTIONS:${NC}
     -h, --help      Show this help message
-    -v, --version   Show version information
     --no-packages   Skip package installation
     --force         Force re-download of dotfiles
 
-EXAMPLES:
-    $SCRIPT_NAME                    # Setup with default packages
-    $SCRIPT_NAME git vim tmux       # Setup with specific packages
-    $SCRIPT_NAME --no-packages      # Setup without installing packages
+${BOLD}EXAMPLES:${NC}
+    dms                    # Setup with default packages
+    dms git vim tmux       # Setup with specific packages
+    dms --no-packages      # Setup without installing packages
 
-REPOSITORY:
+${BOLD}REPOSITORY:${NC}
     $DF_URL
 "
 }
@@ -259,12 +257,6 @@ REPOSITORY:
 # --- Main setup function ---
 main_setup() {
    local skip_packages="$1"
-   shift
-   local packages=("$@")
-   [ ${#packages[@]} -eq 0 ] &&
-      [ ${#PACKAGES[@]} -eq 0 ] &&
-      packages=("${PACKAGES[@]}")
-
    _log -t "Starting Dotfiles Setup"
 
    # Download dotfiles if needed
@@ -273,19 +265,12 @@ main_setup() {
       exit 1
    fi
    # Source function definitions
-   if ! source_dotfiles_script "script/installer.sh"; then
+   if ! source_dotfiles_script "installer.sh"; then
       _log -e "Main script not found"
    fi
 
    # Install packages
-   if [[ ${#packages[@]} -gt 0 ]] && [[ $skip_packages == false ]]; then
-      _log -i "Installing user-specified packages: ${packages[*]}"
-      if command -v check_n_install &>/dev/null; then
-         check_n_install "${packages[@]}"
-      else
-         _log -w "Package installation function not available"
-      fi
-   else
+   if [[ $skip_packages == false ]]; then
       install_packages
    fi
 
@@ -321,27 +306,36 @@ main() {
          force_download=true
          shift
          ;;
+      -i | -install)
+         shift
+         echo "$@"
+         while [[ $1 != "-"* ]]; do
+            [[ -n $1 ]] && packages+=("$1")
+            [[ -n $1 ]] && shift
+         done
+         ;;
       -*)
          echo "Unknown option: $1"
          printf "Use --help for usage information\n"
          exit 1
          ;;
       *)
-         packages+=("$1")
-         shift
+         return 1
          ;;
       esac
    done
 
    # Force download if requested
    if [[ "$force_download" == true ]] && [[ -d "$DF_HOME" ]]; then
-      echo "Force download requested, removing existing dotfiles"
+      _log -w "Force download requested, removing existing dotfiles"
       rm -rf "$DF_HOME"
    fi
 
    # Run setup based on how script was called
-   if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+   if [[ "${BASH_SOURCE[0]}" == "${0}" ]] && [[ ${#packages[@]} -eq 0 ]]; then
       main_setup "$skip_packages" "${packages[@]}"
+   elif [[ ${#packages[@]} -gt 0 ]]; then
+      install_packages "${packages[@]}"
    else
       echo "Script sourced, functions available for use"
    fi

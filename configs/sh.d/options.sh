@@ -4,12 +4,12 @@
 # export LC_CTYPE="C.UTF-8"
 # export LC_ALL="${LC_ALL:-C.UTF-8}"
 export VISUAL="termux-open"
-export PAGER='bat'
+export PAGER="bat"
 export EDITOR="nvim"
 
 # History
-export HISTFILE=~/.history
-export HISTFILESIZE=2000
+export HISTFILE="$HOME/.history"
+export HISTFILESIZE=10000
 export HISTSIZE=500
 export HISTTIMEFORMAT="%F %T " # add timestamp to history
 

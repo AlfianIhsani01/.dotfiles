@@ -1,15 +1,16 @@
-#!/bin/env sh
+#!/bin/env bash
 
 ENABLE_PROMPT="false"
 export PROMPT_DIRTRIM=3
 export PS2="▌"
 
 git_status() {
-   status bits=""
+   bits=""
    # Use porcelain format - faster and more reliable than parsing human output
-   status=$(git status --porcelain=v1 --branch 2>/dev/null) || return
+   status=$(git status --porcelain=v1 --branch 2>/dev/null || return 0)
    # Single pass through status checking for patterns
    while IFS= read -r line; do
+      # shellcheck disable=SC2035
       case $line in
       "## "*" [ahead "*) test "$bits" != *"*"* && bits="*${bits}" ;;
       [MARC]" "*) test "$bits" != *">"* && bits=">${bits}" ;;          # renamed/moved
@@ -23,6 +24,31 @@ git_status() {
    test -n "$bits" && echo " ${bits}"
 }
 
+# git_status() {
+#    bits=""
+#    # Use porcelain format - faster and more reliable than parsing human output
+#    status=$(git status --porcelain=v1 --branch 2>/dev/null || return 0)
+#    # Single pass through status checking for patterns
+#    while IFS= read -r line; do
+#       case $line in
+#       # "## branchname [ahead N]" -> branch ahead
+#       "## "*" [ahead "*) test "$bits" != *"*"* && bits="*${bits}" ;;
+#       # R... (Renamed/Moved), C... (Copied)
+#       [RC]" "*) test "$bits" != *">"* && bits=">${bits}" ;;
+#       # .M, M. (Modified in Index or Working Tree)
+#       # FIX: The original had 'bits="!${#bits}"' which prepended the length.
+#       *[M]* | *" M") test "$bits" != *"!"* && bits="!${bits}" ;;
+#       # .D, D. (Deleted in Index or Working Tree)
+#       *[D]* | *" D") test "$bits" != *"x"* && bits="x${bits}" ;;
+#       # A. (Added to Index), .A (Added to Working Tree - very rare unless modified after add)
+#       [A]" "* | *" A") test "$bits" != *"+"* && bits="+${bits}" ;;
+#       # ?? (Untracked)
+#       "??"*) test "$bits" != *"?"* && bits="?${bits}" ;;
+#       esac
+#    done <<<"$status"
+#
+#    test -n "$bits" && echo " ${bits}"
+# }
 # Pre-compute static values to avoid repeated calls
 _PROMPT_USER="${USER:-$(id -un)}"
 case "$_PROMPT_USER" in
@@ -76,7 +102,7 @@ main_prompt() {
 
    # Build prompt in one assignment for efficiency
    export PS1
-PS1="\n${user_color}▌${_PROMPT_USER}${_C7} › ${_C2}\w${_C7}$(git_status)${jobs}
+   PS1="\n${user_color}▌${_PROMPT_USER}${_C7} › ${_C2}\w${_C7}$(git_status)${jobs}
 ${_C4}${branch}${exit_color}\a❯ ${_C7}"
 }
 

@@ -162,6 +162,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias c='clear'
+alias dms="$DF_HOME/.script/main.sh"
 
 # Alias's for multiple directory listing commands
 test "$(command -v eza 2>/dev/null)" && alias ls='eza --color=always --icons' # add colors and file type extensions
