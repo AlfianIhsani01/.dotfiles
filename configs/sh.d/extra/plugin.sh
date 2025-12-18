@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-shell=$(echo $SHELL | awk -F/ '{print $NF}')
-eval "$(fzf --$shell)"
+shell=${SHELL##*/*/}
+eval "$(fzf --"$shell")"
 # eval "$(atuin init bash)"
-eval "$(starship init $shell)"
+# eval "$(starship init $shell)"
 # eval "$(zoxide init $shell | sed 's/builtin cd -- "$@"/builtin cd -- "$@" \&\& ls || return/')"
 eval "$(zoxide init posix --hook prompt | sed 's/command cd "$@"/command cd "$@" \&\& ls || return 0/')"
 unset shell

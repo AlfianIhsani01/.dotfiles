@@ -1,58 +1,13 @@
 #!/bin/env bash
 
-ENABLE_PROMPT="false"
+ENABLE_PROMPT=true
+
 export PROMPT_DIRTRIM=3
 export PS2="▌"
 
-git_status() {
-   bits=""
-   # Use porcelain format - faster and more reliable than parsing human output
-   status=$(git status --porcelain=v1 --branch 2>/dev/null || return 0)
-   # Single pass through status checking for patterns
-   while IFS= read -r line; do
-      # shellcheck disable=SC2035
-      case $line in
-      "## "*" [ahead "*) test "$bits" != *"*"* && bits="*${bits}" ;;
-      [MARC]" "*) test "$bits" != *">"* && bits=">${bits}" ;;          # renamed/moved
-      *[M]* | *" M") test "$bits" != *"!"* && bits="!${bits}" ;;       # modified
-      [AD]" "* | *" "[AD]) test "$bits" != *"x"* && bits="x${bits}" ;; # deleted
-      "A "* | " A"*) test "$bits" != *"+"* && bits="+${bits}" ;;       # added
-      "??"*) test "$bits" != *"?"* && bits="?${bits}" ;;               # untracked
-      esac
-   done <<<"$status"
-
-   test -n "$bits" && echo " ${bits}"
-}
-
-# git_status() {
-#    bits=""
-#    # Use porcelain format - faster and more reliable than parsing human output
-#    status=$(git status --porcelain=v1 --branch 2>/dev/null || return 0)
-#    # Single pass through status checking for patterns
-#    while IFS= read -r line; do
-#       case $line in
-#       # "## branchname [ahead N]" -> branch ahead
-#       "## "*" [ahead "*) test "$bits" != *"*"* && bits="*${bits}" ;;
-#       # R... (Renamed/Moved), C... (Copied)
-#       [RC]" "*) test "$bits" != *">"* && bits=">${bits}" ;;
-#       # .M, M. (Modified in Index or Working Tree)
-#       # FIX: The original had 'bits="!${#bits}"' which prepended the length.
-#       *[M]* | *" M") test "$bits" != *"!"* && bits="!${bits}" ;;
-#       # .D, D. (Deleted in Index or Working Tree)
-#       *[D]* | *" D") test "$bits" != *"x"* && bits="x${bits}" ;;
-#       # A. (Added to Index), .A (Added to Working Tree - very rare unless modified after add)
-#       [A]" "* | *" A") test "$bits" != *"+"* && bits="+${bits}" ;;
-#       # ?? (Untracked)
-#       "??"*) test "$bits" != *"?"* && bits="?${bits}" ;;
-#       esac
-#    done <<<"$status"
-#
-#    test -n "$bits" && echo " ${bits}"
-# }
-# Pre-compute static values to avoid repeated calls
 _PROMPT_USER="${USER:-$(id -un)}"
 case "$_PROMPT_USER" in
-u0_*) _PROMPT_USER="akal" ;;
+u0_*) _PROMPT_USER="▌akal " ;;
 esac
 
 case "$_PROMPT_USER" in
@@ -61,31 +16,51 @@ root) _PROMPT_USER_COLOR=0 ;;
 esac
 
 # Color array (POSIX-compatible)
-_C0="$(printf '\033[31m')" # Red
-_C1="$(printf '\033[32m')" # Green
-_C2="$(printf '\033[33m')" # Yellow
-_C3="$(printf '\033[34m')" # Blue
-_C4="$(printf '\033[35m')" # Magenta
-_C5="$(printf '\033[36m')" # Cyan
-_C6="$(printf '\033[37m')" # White
-_C7="$(printf '\033[0m')"  # Reset
+_C0="$(printf '\[\e[31m\]')" # Red
+_C1="$(printf '\[\e[32m\]')" # Green
+_C2="$(printf '\[\e[33m\]')" # Yellow
+_C3="$(printf '\[\e[34m\]')" # Blue
+_C4="$(printf '\[\e[35m\]')" # Magenta
+_C5="$(printf '\[\e[36m\]')" # Cyan
+_C6="$(printf '\[\e[37m\]')" # White
+_C7="$(printf '\[\e[0m\]')"  # Reset
+
+fill() {
+   e=$(sed 's/..\[[0-9;]*m.//g' <<<"${1@P}")
+   for ((i = 1; i <= COLUMNS - ${#e}; i++)); do
+      printf "─"
+   done
+   echo "${1@P}"
+   unset -v prompt e fill
+}
+
+git_status() {
+   bits=""
+   status=$(git status --porcelain=v1 --branch 2>/dev/null) || return 0
+   while IFS= read -r line; do
+      case $line in
+      "## " | *" [ahead "*) [[ "$bits" != *"*"* ]] && bits="*$bits" ;;
+      [RC]" "*) [[ "$bits" != *">"* ]] && bits=">$bits" ;;
+      *[M]* | *" M") [[ "$bits" != *"!"* ]] && bits="!$bits" ;;
+      *[D]* | *" D") [[ "$bits" != *"x"* ]] && bits="x$bits" ;;
+      [A]" "* | *" A") [[ "$bits" != *"+"* ]] && bits="+$bits" ;;
+      "??"*) [[ "$bits" != *"?"* ]] && bits="?$bits" ;;
+      esac
+   done <<<"$status"
+
+   test -n "$bits" && echo " ${_C4}[$_C6${bits:-${#bits}}$_C4]$_C6"
+   unset -v status bits
+}
 
 main_prompt() {
    exit_code=$?
-
-   # Fast exit code color selection
-   if [ "$exit_code" -eq 0 ]; then
-      exit_color="$_C5"
-   else
+   test "$exit_code" -eq 0 &&
+      exit_color="$_C5" ||
       exit_color="$_C0"
-   fi
 
    jobs=""
-   if [ -n "$(jobs)" ]; then
-      jobs="${_C1} ●"
-   fi
-   # Get git branch only if in a git repository
-   # Use a single git command for better performance
+   test -n "$(jobs)" &&
+      jobs=" ◙"
    branch=""
    if git rev-parse --git-dir >/dev/null 2>&1; then
       branch_name="$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)"
@@ -102,14 +77,16 @@ main_prompt() {
 
    # Build prompt in one assignment for efficiency
    export PS1
-   PS1="\n${user_color}▌${_PROMPT_USER}${_C7} › ${_C2}\w${_C7}$(git_status)${jobs}
-${_C4}${branch}${exit_color}\a❯ ${_C7}"
+   PS1="\n\r\[\e[2m\]$_C3$(fill "$_C7$(git_status)$_C2${jobs}")\r$user_color${_PROMPT_USER}$_C7› $_C2\w \n\
+$_C3${branch}$exit_color❯ $_C7"
+
+   unset -v branch branch_name exit_color user_color jobs
 }
 
 # Set up prompt command
-if [ -n "$BASH_VERSION" ] || [ -n "$ZSH_VERSION" ] && [ "$ENABLE_PROMPT" == "true" ]; then
+if [ -n "$BASH_VERSION" ] || [ -n "$ZSH_VERSION" ] && [ "$ENABLE_PROMPT" == true ]; then
    PROMPT_COMMAND=main_prompt
-elif [ "$ENABLE_PROMPT" == "true" ]; then
+elif [ "$ENABLE_PROMPT" == true ]; then
    # For other POSIX shells, set initial prompt and update on cd
    main_prompt
    if command -v cd >/dev/null 2>&1; then
@@ -118,4 +95,6 @@ elif [ "$ENABLE_PROMPT" == "true" ]; then
       }
    fi
 fi
-unset -v ENABLE_PROMPT
+unset -v \
+   ENABLE_PROMPT \
+   _PROMPT_USER

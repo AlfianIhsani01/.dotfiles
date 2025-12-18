@@ -23,7 +23,6 @@
 [alias]
   co = checkout
   st = status -sb
-  sp = status --porcelain=v1 --branch
   br = branch
   ci = commit
   ca = commit -a
@@ -32,7 +31,6 @@
   dt  = difftool
   ps = "!git push origin $(git rev-parse --abbrev-ref HEAD)"
   pl = "!git pull origin $(git rev-parse --abbrev-ref HEAD)"
-  st = status
   br = branch
   ba = branch -a
   bm = branch --merged
