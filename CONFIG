@@ -1,0 +1,27 @@
+# This file should sourced by script
+# Configuration
+# Packages
+PACKAGES=(
+# Package, Fallback
+   "neovim"
+   "fzf"
+   "tmux"
+   "kakoune"
+   "git"
+   "eza"
+   "bat"
+   "zoxide"
+   "fd"
+   "ripgrep"
+)
+
+# Dotfiles group
+CONF_PACK=(
+   # Group, Target path
+   [termux]="$HOME"
+   [configs]="$HOME/.config"
+)
+
+DF_URL="https://github.com/AlfianIhsani01/.dotfiles.git"
+DF_HOME="${HOME}/.dotfiles"
+MAX_ATTEMPTS=2
