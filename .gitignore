@@ -3,3 +3,4 @@ termux/shell
 configs/nvim/lazy-lock.json
 *env.fish
 preset.toml
+test*
