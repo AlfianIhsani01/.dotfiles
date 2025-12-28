@@ -1,4 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env sh
+
 extract() {
    if [ -f "$1" ]; then
       case "$1" in
@@ -36,7 +37,7 @@ mkd() {
    mkdir -p "$@" && test "$#" -le "1" && builtin cd "$1" || return 0
 }
 
-# Easy go to config
+# Easy go to config directory
 cfg() {
    folder="$1"
    config_path=${XDG_CONFIG_HOME:-$HOME/.config}
@@ -58,7 +59,37 @@ mvg() {
 }
 
 # fzf
-__orintation() {
+__finder() {
+   case "$1" in
+   f | file)
+      if command -v fd --version >/dev/null; then
+         echo "fd --follow -tf" && return 0
+      fi
+      echo "find . -type f ! -empty"
+      ;;
+   d | dir)
+      if command -v fd --version >/dev/null; then
+         echo "fd --follow -td --hidden -E .git" && return 0
+      fi
+      echo "find . -type d ! -path .git"
+      ;;
+   *)
+      echo "find"
+      ;;
+   esac
+
+}
+
+__greper() {
+   # Use rg (ripgrep) if available, otherwise fall back to grep
+   if command -v rg 2>/dev/null; then
+      echo "rg --color=always --colors match:none --line-number --no-heading --trim --smart-case"
+   else
+      echo "grep -r --color=always --line-number"
+   fi
+}
+
+__orientation() {
    row=$(stty size | awk '{print $1}')
    col=$(stty size | awk '{s=$2/2} END {print s}')
 
@@ -72,8 +103,8 @@ __orintation() {
 
 fvi() {
    file=$(
-      FZF_DEFAULT_COMMAND="fd --follow -tf"
-      fzf --preview "bat --style=plain --color=always {}"
+      FZF_DEFAULT_COMMAND="$(__finder f)"
+      fzf --preview "$PAGER --style=plain --color=always {}"
    )
    test -n "${file}" && "${EDITOR}" "${file}"
    unset file
@@ -81,7 +112,7 @@ fvi() {
 
 fcd() {
    dir=$(
-      FZF_DEFAULT_COMMAND="fd --follow -td --hidden -E .git"
+      FZF_DEFAULT_COMMAND="$(__finder d)"
       fzf --preview="if [ -d {} ]; then ls --color=always -A {}; else bat {}; fi" | xargs -r -I {} echo {}
    )
    test -d "$dir" && cd "$dir" || return 0
@@ -89,7 +120,7 @@ fcd() {
 }
 
 pkgi() {
-   window=$(__orintation)
+   window=$(__orientation)
    package=$(
       FZF_DEFAULT_OPTS="--exact --style=full"
       FZF_DEFAULT_COMMAND="pkg list-all | awk '{print \$1 \" \" \$2}' | bat -r 2:"
@@ -99,11 +130,11 @@ pkgi() {
          awk -F/ '{print $1}'
    )
 
-   test -n "${package}" &&
-      echo "installing ${package}..." &&
-      pkg install "${package}" &&
-      unset -v window package ||
-      return 0
+   test -n "${package}" || return 0
+   echo "installing ${package}..."
+   pkg install "${package}"
+   unset -v window package
+   return 0
 }
 
 todo() {
@@ -120,24 +151,18 @@ todo() {
 fgrep() {
    dir="${1:-.}"
    initial_query="${2:-}"
-   window=$(__orintation)
-   # Use rg (ripgrep) if available, otherwise fall back to grep
-   if command -v rg 2>/dev/null; then
-      SEARCH_CMD="rg --color=always --colors match:none --line-number --no-heading --trim --smart-case"
-   else
-      SEARCH_CMD="grep -r --color=always --line-number"
-   fi
+   window=$(__orientation)
 
    # Interactive search with live reloading
    selected=$(
-      FZF_DEFAULT_OPTS="--exact"
-      FZF_DEFAULT_COMMAND="$SEARCH_CMD '\S' '$dir'"
+      FZF_DEFAULT_OPTS="--header=grep"
+      FZF_DEFAULT_COMMAND="$(__greper) '\S' '$dir'"
       fzf --ansi \
          --disabled \
-         --bind "change:reload:$SEARCH_CMD {q} '$dir' || true" \
+         --bind "change:reload:$(__greper) {q} '$dir' || true" \
          --bind "enter:become(echo {1}:{2})" \
-         --preview 'bat --number --color=always --line-range {2}::60 --highlight-line {2} {1} 2>/dev/null || cat {1}' \
-         "${window}" \
+         --preview 'bat --number --color=always --line-range {2}::20 --highlight-line {2} {1} 2>/dev/null || cat {1}' \
+         "$window" \
          --delimiter ':' \
          --prompt '> ' \
          --header 'Type to search • Enter to open • Ctrl-C to cancel' \
@@ -162,7 +187,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias c='clear'
-alias dms="$DF_HOME/.script/main.sh"
+alias dfm="${DF_HOME:-$HOME/.dotfiles}/.script/dfm"
 
 # Alias's for multiple directory listing commands
 test "$(command -v eza 2>/dev/null)" && alias ls='eza --color=always --icons' # add colors and file type extensions

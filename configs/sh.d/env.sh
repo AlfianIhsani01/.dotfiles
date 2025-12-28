@@ -1,20 +1,22 @@
 #!/bin/env bash
 
 ## XDG directory
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_RUNTIME_DIR="$HOME/.local/tmp/runtime-$UID"
-export XDG_BIN_DIR="$HOME/.local/bin"
 
-export PATH="$PATH:${XDG_BIN_DIR:-$HOME/.local/bin}"
-export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share/cargo/bin}"
-export PATH="$PATH:${XDG_DATA_HOME:-$HOME/.local/share/nvim/mason/bin}"
-export PATH="$PATH:/system/bin"
-export PATH="$PATH:${HOME}/.deno/bin"
+export XDG_BIN_DIR="\
+:$HOME/.local/bin\
+:$XDG_DATA_HOME/cargo/bin\
+:$XDG_DATA_HOME/nvim/mason/bin\
+:/system/bin\
+:$HOME/.deno/bin"
+export PATH="$PATH${XDG_BIN_DIR:-}"
 
-export DF_HOME="${HOME}/.dotfiles"
+## Dotfiles
+export DF_HOME="$HOME/.dotfiles"
 
 ## Nodejs
 export NPM_CONFIG_USERCONFIG="${XDG_CONFIG_HOME}/npm/npmrc"
@@ -33,14 +35,12 @@ export PYTHONHISTORY="${XDG_STATE_HOME:-$HOME/.local/state/python_history}"
 # export HELIX_RUNTIME="/data/data/com.termux/files/home/.config/helix/runtime"
 
 __xdg_dirs() {
-   xdg_dirs=(
-      "$XDG_CONFIG_HOME"
-      "$XDG_CACHE_HOME"
-      "$XDG_RUNTIME_DIR"
-      "$XDG_STATE_HOME"
-      "$XDG_DATA_HOME"
-   )
-   for i in "${xdg_dirs[@]}"; do
+   xdg_dirs="\
+      $XDG_CONFIG_HOME      $XDG_CACHE_HOME \
+      $XDG_RUNTIME_DIR      $XDG_STATE_HOME \
+      $XDG_DATA_HOME"
+
+   for i in $xdg_dirs; do
       if [ ! -d "$i" ]; then
          mkdir -p "$i" || return 1
       fi
