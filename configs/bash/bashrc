@@ -14,10 +14,7 @@ if [[ -d ${XDG_CONFIG_HOME:-$HOME/.config}/sh.d ]]; then
   for file in "${XDG_CONFIG_HOME:-$HOME/.config}"/sh.d/*.sh; do
     source "$file"
   done
-  for file in "${XDG_CONFIG_HOME:-$HOME/.config}"/sh.d/extra/*.sh; do
-    source "$file"
-  done
 fi
-if [ -f ~/.bash_history ] && [ -f ~/.history ];then
+if [ -f ~/.history ] && [ -f ~/.bash_history ] ;then
   rm ~/.bash_history
 fi
