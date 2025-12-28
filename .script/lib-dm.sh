@@ -5,8 +5,10 @@
 # ------------------------------------------------------------------------------
 
 # Configuration
-. ./main.sh
-. ./installer.sh
+
+. ../CONFIG
+. "$DF_HOME/.script/dfm"
+
 # ln options
 declare -ra LN_OPTIONS=(
    "--verbose"
@@ -98,7 +100,7 @@ deploy_package() {
    local output
    if output=$("${cmd[@]}" 2>&1); then
       _log -s "Package $package_name deployed successfully"
-      [[ -n "$output" ]] && _log -t "Output: $output"
+      [[ -n "$output" ]] && _log -i "Output: $output"
       return 0
    else
       _log -e "Failed to deploy package $package_name"
@@ -107,8 +109,8 @@ deploy_package() {
    fi
 }
 
-# --- Undeploy a configuration package ---
-add_package() {
+# --- add a configuration package ---
+add_files() {
    local package_group="$DF_HOME/$1"
    shift
    local package_target=("$@")
@@ -257,22 +259,17 @@ Dotfiles Deployment Script
 USAGE:
     source ${0##*/}
     deploy [PACKAGES...]         # Deploy specified packages (or all if none specified)
-    undeploy [PACKAGES...]       # Undeploy specified packages
-    list-packages                # List available packages and their status
-
-DESCRIPTION:
-    Manages dotfiles deployment using GNU Stow with enhanced error handling.
-    Automatically installs stow if not available and validates dotfiles structure.
+    add [PACKAGES...]            # Undeploy specified packages
+    list-dotfiles                # List available packages and their status
 
 ENVIRONMENT VARIABLES:
     DF_HOME           Dotfiles directory (default: \$HOME/.dotfiles)
     XDG_CONFIG_HOME   Config directory (default: \$HOME/.config)
-    DEBUG             Enable debug output (set to 1)
 
 EXAMPLES:
     deploy                      # Deploy all packages
     deploy vim tmux             # Deploy specific packages
-    undeploy nvim               # Undeploy neovim config
+    add nvim                    # Undeploy neovim config
     list-packages               # Show available packages
 
 EOF
@@ -285,15 +282,15 @@ main() {
       show_help
       exit 0
       ;;
-   -deploy)
+   --deploy)
       shift
       deploy "$@"
       ;;
-   -undeploy)
+   --undeploy)
       shift
       undeploy "$@"
       ;;
-   list | list-packages)
+   -l | list-packages)
       list_packages
       ;;
    *)

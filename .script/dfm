@@ -1,0 +1,474 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------------------------
+# Dotfiles Management Script
+# Downloads and configures dotfiles with package installation
+# ------------------------------------------------------------------------------
+
+# Source Configuration
+[[ -f $DF_HOME/CONFIG ]] &&
+   . "$DF_HOME/CONFIG"
+
+# Colors for output
+declare -g RED="\033[0;31m"
+declare -g GREEN="\033[0;32m"
+declare -g YELLOW="\033[0;33m"
+declare -g BLUE="\033[0;34m"
+declare -g CYAN="\033[0;36m"
+declare -g BOLD="\033[1m"
+# declare -r DIM="\033[2m"
+declare -g NC="\033[0m"
+
+# --- _logging functions ---
+_log() {
+   local ARG=("$1")
+   [ "${#@}" -gt 2 ] && shift
+   local MESSAGE=("$@")
+
+   case "${ARG[0]}" in
+   -i | info)
+      printf "${BLUE}[i]${NC} %b\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -s | succes)
+      printf "${GREEN}[✔]${NC} %b\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -w | warning)
+      printf "${YELLOW}[?]${NC} %b\n" "${MESSAGE[1]}" >/dev/tty
+      ;;
+   -e | error)
+      printf "${RED}[!]${NC} %b\n" "${MESSAGE[1]}" >&2
+      ;;
+   -t | step)
+      printf "${CYAN}[-]${NC} ${BOLD}%b${NC}\n" "${MESSAGE[1]^^}" >/dev/tty
+      ;;
+   -f | format)
+      printf "${MESSAGE[@]}" >/dev/tty
+      ;;
+   *)
+      printf "    %b\n" "${MESSAGE[*]}" >/dev/tty
+      return 1
+      ;;
+   esac
+}
+
+# --- Check if dotfiles exist and are valid ---
+validate_dotfiles() {
+   [[ -d "$DF_HOME" ]] || return 1
+   [[ -d "$DF_HOME/.script" ]] || return 1
+   [[ -d "$DF_HOME/.git" ]] || return 1
+   return 0
+}
+
+# --- Download dotfiles with retry logic ---
+check_dotfiles() {
+   local attempt=0
+   while ((attempt <= MAX_ATTEMPTS)); do
+      _log -i "Checking for dotfiles at ${DF_HOME/$HOME/\~} (Attempt $attempt of $MAX_ATTEMPTS)"
+
+      if validate_dotfiles; then
+         _log -s "Dotfiles found and validated at ${DF_HOME/$HOME/\~}"
+         export DF_HOME
+         return 0
+      fi
+
+      _log -w "Dotfiles not found or invalid"
+
+      if ((attempt == MAX_ATTEMPTS)); then
+         _log -e "Maximum attempts reached"
+         return 1
+      fi
+
+      if prompt_yes_no "Clone dotfiles with Git?"; then
+
+         _log -i "Installing git if needed..."
+         if ! command -v git --version &>/dev/null; then
+            # Fallback package installation
+            if command -v apt-get &>/dev/null; then
+               sudo apt-get update && sudo apt-get install -y git
+            elif command -v pkg &>/dev/null; then
+               pkg install -y git
+            elif command -v dnf &>/dev/null; then
+               sudo dnf install -y git
+            else
+               _log -e "Cannot install git automatically."
+               return 1
+            fi
+         fi
+
+         _log -i "Cloning dotfiles repository..."
+         if [[ -d "$DF_HOME" ]]; then
+            _log -i "Removing existing incomplete dotfiles directory"
+            rm -rf "$DF_HOME"
+         fi
+
+         if git clone --depth 1 "$DF_URL" "$DF_HOME"; then
+            _log -s "Dotfiles cloned successfully"
+            export DF_HOME
+         else
+            _log -e "Failed to clone dotfiles repository"
+            ((attempt++))
+            continue
+         fi
+      else
+         _log -e "Cannot proceed without dotfiles"
+         return 1
+      fi
+
+      ((attempt++))
+      [[ $attempt -le $MAX_ATTEMPTS ]] && sleep 2
+   done
+
+   return 1
+}
+
+# --- Source dotfiles scripts safely ---
+source_script() {
+   local script_path="$DF_HOME/.script/$1"
+   local script_name="${1/.*/}"
+
+   if [[ -f "$script_path" ]]; then
+      # _log -i "Sourcing $script_name..."
+      # shellcheck source=/dev/null
+      source "$script_path"
+      return 0
+   else
+      _log -w "dfm: $script_name script not found at $script_path"
+      return 1
+   fi
+}
+
+# --- Install packages from dotfiles configuration ---
+install_packages() {
+   local packages=("${@:-${PACKAGES[@]}}")
+
+   _log -t "Installing Packages"
+   # Source package lists
+   if [[ ${#packages[@]} -gt 0 ]]; then
+      if ! source_script "lib-pm.sh"; then
+         return 1
+      fi
+      if command -v check_n_install &>/dev/null; then
+         check_n_install "${packages[@]}"
+      else
+         _log -w "check_n_install function not available"
+         return 1
+      fi
+   else
+      _log -w "No package(s) specified/configured, skipping installation"
+      return 1
+   fi
+}
+
+# --- Deploy dotfiles ---
+deploy_dotfiles() {
+   _log -t "Deploying Dotfiles"
+
+   if source_script "lib-dm.sh"; then
+      if command -v deploy &>/dev/null; then
+         _log -i "Deploying dotfiles..."
+         deploy "${CONF_PACK[@]}"
+         _log -s "Dotfiles deployed successfully"
+      else
+         _log -w "Deploy function not found in symlink.sh"
+      fi
+   else
+      _log -w "Manage script not found, skipping dotfile deployment"
+   fi
+}
+
+# --- Configure Termux-specific settings ---
+configure_termux() {
+   if [[ -n "${TERMUX_VERSION:-}" ]] || [[ "$PREFIX" == *"com.termux"* ]]; then
+      _log -t "Configuring Termux"
+
+      if source_script "termux.sh"; then
+         _log -s "Termux configuration completed"
+      else
+         _log -w "Termux script not found, skipping Termux-specific configuration"
+      fi
+   fi
+}
+
+prompt_yes_no() {
+   local prompt="$1"
+   local default="${2:-y}"
+   local response
+
+   while true; do
+      printf "%s [%s]: " "$prompt" "$default"
+      read -r response
+      response="${response:-$default}"
+
+      case "${response,,}" in
+      y | yes) return 0 ;;
+      n | no) return 1 ;;
+      *) echo "Please answer 'y' or 'n'" ;;
+      esac
+   done
+}
+
+show_help() {
+   if [[ -z $1 ]]; then
+      echo -e "\
+Dotfiles Management Script
+
+${BOLD}USAGE:${NC}
+    dms [OPTIONS] [PACKAGES...]
+
+${BOLD}DESCRIPTION:${NC}
+    Downloads and configures dotfiles from GitHub repository.
+    Installs specified packages and sets up the development environment.
+
+${BOLD}OPTIONS:${NC}
+    -a, add [f/file, d/dir, p/pkg]
+        Add file/directory/package to dotfiles group (default)/intallation list
+    -c, check         check package(s)
+    --no-packages     Skip package installation
+    --reset           Force re-download of dotfiles
+    -h, help          Show this help message
+
+${BOLD}EXAMPLES:${NC}
+    dfm                    # Setup with default packages
+    dfm -i git vim tmux    # Setup with specific packages
+    dfm --no-packages      # Setup without installing packages
+
+${BOLD}REPOSITORY:${NC}
+    $DF_URL
+"
+   elif [[ $1 == "add_pkg" ]]; then
+      echo -e "\
+dfm [-ap | add pkg ] [PACKAGES...]
+
+${BOLD}DESCRIPTION:${NC}
+add package to installation list
+"
+   elif [[ $1 == "add_file" ]]; then
+      echo -e "\
+dfm [-ap | add pkg ] [PACKAGES...]
+
+${BOLD}DESCRIPTION:${NC}
+add package to installation list
+"
+   elif [[ $1 == "unknown" ]]; then
+      echo -e "\
+Unknown option: $2
+Use --help for usage information
+"
+   fi
+}
+
+# --- Main setup function ---
+main_setup() {
+   local skip_packages="$1"
+   _log -t "Starting Dotfiles Script"
+
+   # Download dotfiles if needed
+   if ! check_dotfiles; then
+      _log -e "Failed to obtain dotfiles"
+      exit 1
+   fi
+
+   # Install packages
+   if [[ $skip_packages == false ]]; then
+      install_packages
+   fi
+
+   # Deploy dotfiles
+   deploy_dotfiles
+
+   # Configure Termux if applicable
+   configure_termux
+
+   _log -s "Dotfiles setup completed successfully!"
+   _log -i "You may need to restart your terminal or _log out/in for all changes to take effect"
+}
+
+parse_arg() {
+   local skip_packages=false
+   local reset_dotfiles=false
+   local packages=()
+   local files=()
+   local exclude=()
+
+   local cmd=$1
+   case "$cmd" in
+   add)
+      shift
+      opts=(
+         "-p --package"
+         "-g --group"
+         "-s --source"
+         "-e --exclude"
+      )
+      ;;
+   deploy)
+      shift
+      echo 'deploy'
+      ;;
+   set)
+      shift
+      opts=(
+         "-f --fallback"
+         "-p --path"
+         "-p package"
+      )
+      echo 'set'
+      ;;
+   status)
+      shift
+      echo 'status'
+      ;;
+   help)
+      shift
+      echo 'show_help'
+      ;;
+   *)
+      _log "unknown command: $cmd"
+      ;;
+   esac
+   # Parse command line arguments
+   while [[ $# -gt 0 ]]; do
+      case "$1" in
+      -h | --help)
+         show_help
+         exit 0
+         ;;
+      --no-packages)
+         skip_packages=true
+         shift
+         ;;
+      --reset)
+         reset_dotfiles=true
+         shift
+         ;;
+      -c* | check)
+         [[ ! $1 =~ "-" ]] && shift
+         case "$1" in
+         -cp | pkg)
+            shift
+            while [[ $# -gt 0 ]]; do
+               if [[ $1 != "-"* ]]; then
+                  packages+=("$1")
+                  shift
+               else
+                  break
+               fi
+            done
+            if source_script "lib-pm.sh"; then
+               _log -t "Checking Package(s)"
+
+               pkg_manager=$(detect_package_manager)
+               packages=("${packages[@]:-${PACKAGES[@]}}")
+               read -ra missing_packages <<<"$(display_package_table "is_installed $pkg_manager" "installed/not installed" "${packages[@]}")"
+
+               [[ ${#missing_packages[@]} -ne 0 ]] && _log -i "Missing ${#missing_packages[@]}/${#packages[@]} package(s)" && return 0
+               _log -s "All packages available"
+            else
+               _log -e "installer script not found"
+               return 1
+            fi
+            return 0
+            ;;
+         -+d | deploy)
+            shift
+            echo "check configs deployment"
+            exit 0
+            ;;
+         -c)
+            show_help unknown "$1"
+            exit 1
+            ;;
+         esac
+         ;;
+      -a | add)
+         [[ ! $1 =~ "-" ]] && shift
+         echo "$1"
+         case "$1" in
+         -ap | pkg)
+            shift
+            while [[ $# -gt 0 ]]; do
+               if [[ $1 != "-"* ]]; then
+                  packages+=("$1")
+                  shift
+               else
+                  break
+               fi
+            done
+            if [[ ${#packages[@]} -eq 0 ]]; then
+               show_help add_pkg
+               return 1
+            fi
+            ;;
+         -a+)
+            show_help unknown "$1"
+            exit 1
+            ;;
+         -a? | *)
+            shift
+            while [[ $# -gt 0 ]]; do
+               if [[ $1 != "-"* ]]; then
+                  if [[ -f $1 ]]; then
+                     files+=("$1")
+                     shift
+                  else
+                     _log -w "$1 not found"
+                     shift
+                  fi
+               else
+                  break
+               fi
+            done
+            if [[ ${#files[@]} -eq 0 ]]; then
+               show_help add_file
+               return 1
+            fi
+            if source_script "lib-dm.sh"; then
+               if command -v add_files &>/dev/null; then
+                  add_files "${files[@]}"
+                  return 0
+               fi
+               _log -e "add_files command not available"
+               return 1
+            fi
+            return 0
+            ;;
+         # *)
+         #    show_help unknown "$1"
+         #    exit 1
+         #    ;;
+         esac
+         ;;
+      -*)
+         show_help unknown "$1"
+         exit 1
+         ;;
+      *)
+         exit 1
+         ;;
+      esac
+   done
+}
+
+# --- Main execution ---
+main() {
+   local args=$(parse_args)
+
+   # Force download if requested
+   if [[ "$reset_dotfiles" == true ]] && [[ -d "$DF_HOME" ]]; then
+      _log -w "Reset dotfiles requested, removing existing dotfiles"
+      dotfiles_name=$(basename "$DF_HOME")
+      mv "$DF_HOME" "${DF_HOME/$dotfiles_name/}/$dotfiles_name-old"
+   fi
+
+   if [ -p /dev/stdin ]; then
+      # Optionally check if the parent process is curl
+      parent_cmd=$(ps -o comm= $PPID)
+      if [[ "$parent_cmd" == "curl" ]]; then
+         main_setup "$skip_packages"
+      fi
+   elif [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+      main_setup "$skip_packages"
+   fi
+}
+
+main "$@"

@@ -77,14 +77,14 @@ spinner() {
    while kill -0 "$pid" 2>/dev/null; do
       i=$(((i + 1) % ${#spinstr}))
       tput rc
-      printf "%s" "${spinstr:$i:1}"
+      _log -f "\r %s " "${spinstr:$i:1}"
       sleep 0.1
    done
 
    # Restore the cursor
+   tput rc # Restore to the last saved position
    tput cnorm
-   tput rc   # Restore to the last saved position
-   printf "" # Clear the last spinner character
+   _log -f "%s\n" " " # Clear the last spinner character
 }
 
 # --- Install a package with enhanced error handling ---
@@ -113,20 +113,19 @@ install_package() {
    eval "$install_cmd '$package' &>'$temp__log'" &
    local install_pid=$!
 
-   spinner "$install_pid"
+   _log -f "\r    %s" "installing $package..."
+   spinner "$install_pid" >/dev/tty
 
    # Wait for the background process to finish and check its exit status
    if wait "$install_pid"; then
       _log -s "Success"
       return 0
-   else
-      _log -w "Failed"
-      _log "Installation log" >&2
-      tail -n 10 "$temp__log" >&2 # Show the last 10 lines of the _log
-      ((missing_count++))
-      _log "---"
-      return 1
    fi
+   _log -w "Failed"
+   _log "Installation log:" >&2
+   tail -n 10 "$temp__log" >&2 # Show the last 10 lines of the _log
+   _log "---"
+   return 1
 }
 
 # --- Display package status table ---
@@ -135,6 +134,7 @@ display_package_table() {
    local messages="$2"
    shift && shift
    local packages=("$@")
+   local missing_packages=()
 
    if [[ $messages == *"/"* ]]; then
       local msg_true="${messages/\/*/}"
@@ -146,7 +146,6 @@ display_package_table() {
 
    _log -f "${BLUE}${BOLD}%-18s %s${NC}\n" "Package" "Status"
 
-   local missing_packages=()
    for package in "${packages[@]}"; do
       _log -f "%-14s " "$package"
 
@@ -168,7 +167,6 @@ install_missing_packages() {
    local failed_packages=()
    local choice
 
-   [[ ${#missing_packages[@]} -eq 0 ]] && return 0
    _log -i "Missing packages: ${missing_packages[*]}"
 
    # Enhanced prompt with better options
@@ -184,7 +182,8 @@ install_missing_packages() {
       a | all)
          _log -i "Installing all missing packages..."
          for package in "${missing_packages[@]}"; do
-            install_package "$pkg_manager" "$package" || failed_packages+=("$package")
+            install_package "$pkg_manager" "$package" ||
+               failed_packages+=("$package")
          done
          break
          ;;
@@ -193,13 +192,16 @@ install_missing_packages() {
          for i in "${!missing_packages[@]}"; do
             _log -f "  [%d] %s\n" "$((i + 1))" "${missing_packages[i]}"
          done
-         _log -f "%s" "Enter numbers: "
+         _log -f "%s" "Enter numbers 1-${#missing_packages[@]}: "
          read -ra selections
 
          for selection in "${selections[@]}"; do
-            if [[ "$selection" =~ ^[0-9]+$ ]] && ((selection >= 1 && selection <= ${#missing_packages[@]})); then
-               local pkg="${missing_packages[$((selection - 1))]}"
-               install_package "$pkg_manager" "$pkg" || failed_packages+=("$pkg")
+            local pkg="${missing_packages[$((selection - 1))]}"
+            if [[ "$selection" =~ ^[0-9]+$ && $selection -ge 1 && $selection -le ${#missing_packages[@]} ]]; then
+               install_package "$pkg_manager" "$pkg" ||
+                  failed_packages+=("$pkg")
+            else
+               _log -e "${selection[*]}: please insert valid numbers"
             fi
          done
          break
@@ -237,20 +239,22 @@ check_n_install() {
    _log -i "Using $pkg_manager package manager"
 
    # Display package status and get missing packages
-   local missing_packages
+   local missing_packages=()
    read -ra missing_packages <<<"$(display_package_table "is_installed $pkg_manager" "installed/not installed" "$@")"
+   echo "${missing_packages[*]}" | termux-toast
 
-   # echo "${missing_packages}"
    # Install missing packages if any
-   local failed_packages
-   read -ra failed_packages <<<"$(install_missing_packages "$pkg_manager" "${missing_packages[@]}")"
+   local failed_packages=()
+   if [[ ${missing_packages[0]} != "" ]]; then
+      read -ra failed_packages <<<"$(install_missing_packages "$pkg_manager" "${missing_packages[@]}")"
+   fi
+   failed_counts=${#failed_packages[*]}
 
-   # echo "${failed_packages[@]}"
    # Final summary
    _log -t "INSTALLATION SUMMARY"
-   _log -s "$(($# - ${#failed_packages[@]}))/$# Packages installed or already present"
+   _log -s "$(($# - failed_counts))/$# Packages installed or already present"
 
-   if [[ ${#failed_packages[@]} -gt 0 ]]; then
+   if [[ ${failed_packages[*]} != "" || ${failed_packages[*]} -gt 1 ]]; then
       _log -w "Failed/skipped packages: ${failed_packages[*]}"
       exit 1
    fi
