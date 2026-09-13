@@ -1,5 +1,5 @@
 {
-	"name": "Void Linux",
+	"name": "Container",
 	"build": {
 		"dockerfile": "./Dockerfile"
 	}
