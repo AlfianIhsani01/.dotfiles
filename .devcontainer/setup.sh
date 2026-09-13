@@ -61,7 +61,7 @@ setup_user() {
       if [ "$USER_GID" != "automatic" ]; then
          groupadd -g "$USER_GID" "$USERNAME"
       else
-        groupadd "$USERNAME"
+         groupadd "$USERNAME"
       fi
       
       if [ "$USER_UID" != "automatic" ]; then
@@ -123,13 +123,13 @@ configure_sshd() {
 
    # Apply SSH configuration changes
    sed -i \
-      -e 's/session\s*required\s*pam_loginuid\.so/session optional pam_loginuid.so/g' \
+      -e 's|session\s*required\s*pam_loginuid\.so|session optional pam_loginuid.so|g' \
       /etc/pam.d/sshd
 
    sed -i \
-      -e 's/#*PermitRootLogin prohibit-password/PermitRootLogin yes/g' \
-      -e "s/#*\s*Port\s\+.*/Port $SSHD_PORT/g" \
-      -e 's/#\?\s*UsePAM\s\+.*/UsePAM yes/g' \
+      -e 's|#*PermitRootLogin prohibit-password|PermitRootLogin yes|g' \
+      -e "s|#*\s*Port\s\+.*|Port $SSHD_PORT|g" \
+      -e 's|#\?\s*UsePAM\s\+.*|UsePAM yes|g' \
       /etc/ssh/sshd_config
 }
 
