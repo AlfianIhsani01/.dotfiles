@@ -149,11 +149,11 @@ sudoIf() {
 
 # Start SSH server - detect init system
 start_ssh_service() {
-     if command -v sshd >/dev/null 2>&1 && command -v which >/dev/null 2>&1; then
-        sshdCmd=$(which sshd)
-        sudoIf $sshdCmd -D -e 2>&1 | sudoIf tee /tmp/sshd.log > /dev/null
-     else
-        echo "Could't start sshd"
+    if command -v sshd >/dev/null 2>&1; then
+        sudoIf sshd -D -e 2>&1 | sudoIf tee /tmp/sshd.log
+    else
+        echo "sshd not found in PATH"
+        return 1
     fi
 }
 
