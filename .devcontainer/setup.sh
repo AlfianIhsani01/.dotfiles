@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration with defaults
-SSHD_PORT="2222"
+SSHD_PORT=2222
 USERNAME="akal"
 USER_UID="automatic"
 USER_GID="automatic"
@@ -58,8 +58,8 @@ setup_user() {
       fi
    else
       # Create new user
-      local gid_arg="1000"
-      local uid_arg="1000"
+      local gid_arg=1000
+      local uid_arg=1000
 
       [ "$USER_GID" != "automatic" ] && gid_arg="--gid $USER_GID"
       [ "$USER_UID" != "automatic" ] && uid_arg="--uid $USER_UID"
