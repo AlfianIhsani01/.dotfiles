@@ -1,5 +1,9 @@
-FROM ghcr.io/void-linux/void-musl-full:20250601r1
-RUN xbps-install -Syu xbps && xbps-install -y \
+FROM fedora:latest
+
+LABEL description="Fedora dev container with SSH and dev tools"
+
+RUN dnf update -y && \
+    dnf install -y \
     curl \
     wget \
     iptables \
@@ -9,23 +13,17 @@ RUN xbps-install -Syu xbps && xbps-install -y \
     tmux \
     ripgrep \
     findutils \
-    openssh \
+    openssh-server \
+    openssh-clients \
     openssl \
     lsof \
     bash \
     sudo \
-    which \
-    && xbps-remove -O
-
-# COPY ./utils.sh /utils.sh
-# RUN chmod +x /utils.sh
+    which && \
+    dnf clean all
 
 COPY ./setup.sh /setup.sh
-RUN chmod +x /setup.sh
-RUN /setup.sh
+RUN chmod +x /setup.sh && /setup.sh
 
+USER akal
 ENTRYPOINT ["/usr/local/share/ssh-init.sh"]
-
-# RUN useradd -m -G wheel akal && \
-#     echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-# USER akal
