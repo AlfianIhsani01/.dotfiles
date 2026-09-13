@@ -48,9 +48,9 @@ setup_user() {
    if user_exists "$USERNAME"; then
       # Update existing user
       if [ "$USER_GID" != "automatic" ] && [ "$USER_GID" != "$(id -g "$USERNAME")" ]; then
-         group_name="$(id -gn "$USERNAME")"
-         groupmod --gid "$USER_GID" "$group_name"
-         usermod --gid "$USER_GID" "$USERNAME"
+         group_name="$(id -gn "$USERNAME")" || group_name="$USERNAME"
+         groupmod --gid "$USER_GID" "$group_name" || true
+         usermod --gid "$USER_GID" "$USERNAME" || true
       fi
 
       if [ "$USER_UID" != "automatic" ] && [ "$USER_UID" != "$(id -u "$USERNAME")" ]; then
