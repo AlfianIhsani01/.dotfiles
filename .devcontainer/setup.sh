@@ -58,14 +58,17 @@ setup_user() {
       fi
    else
       # Create new user
-      local gid_arg=1000
-      local uid_arg=1000
-
-      [ "$USER_GID" != "automatic" ] && gid_arg="--gid $USER_GID"
-      [ "$USER_UID" != "automatic" ] && uid_arg="--uid $USER_UID"
-
-      groupadd -g "$gid_arg" "$USERNAME"
-      useradd -s /bin/bash -u "$uid_arg" --gid "$USERNAME" -m "$USERNAME"
+      if [ "$USER_GID" != "automatic" ]; then
+         groupadd -g "$USER_GID" "$USERNAME"
+      else
+        groupadd "$USERNAME"
+      fi
+      
+      if [ "$USER_UID" != "automatic" ]; then
+        useradd -s /bin/bash -u "$USER_UID" --gid "$USERNAME" -m "$USERNAME"
+      else
+        useradd -s /bin/bash --gid "$USERNAME" -m "$USERNAME"
+      fi
    fi
 
    # Setup sudo for non-root users
